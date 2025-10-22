@@ -38,12 +38,12 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lemuelvellez/matomo-form-analytics-custom-field-tracker.git"
+        "url": "https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker.git"
     },
     "bugs": {
-        "url": "https://github.com/lemuelvellez/matomo-form-analytics-custom-field-tracker/issues"
+        "url": "https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues"
     },
-    "homepage": "https://github.com/lemuelvellez/matomo-form-analytics-custom-field-tracker#readme",
+    "homepage": "https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker#readme",
     "devDependencies": {
         "@babel/core": "^7.23.0",
         "@babel/preset-env": "^7.23.0",

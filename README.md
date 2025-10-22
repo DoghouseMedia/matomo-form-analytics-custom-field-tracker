@@ -2,8 +2,28 @@
 
 [![npm version](https://badge.fury.io/js/matomo-form-analytics-custom-field-tracker.svg)](https://badge.fury.io/js/matomo-form-analytics-custom-field-tracker)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
 
 A modular, object-oriented npm package for creating custom field trackers that integrate with Matomo FormAnalytics. Built with **inheritance patterns** and **centralized factory design**.
+
+## 🎯 What This Package Does
+
+This package extends Matomo FormAnalytics to track custom form fields that aren't natively supported, such as:
+- **WYSIWYG editors** (ProseMirror, TinyMCE, etc.)
+- **Star rating systems**
+- **Image selection interfaces**
+- **Any custom interactive form elements**
+
+## ✨ Key Features
+
+- 🔧 **Modular Architecture** - Easy to extend with new field types
+- 🎯 **Object-Oriented Design** - Clean inheritance patterns
+- 📊 **Full Matomo Integration** - Compatible with FormAnalytics API
+- 🚀 **Multiple Build Formats** - ESM, CommonJS, and UMD support
+- 📝 **TypeScript Support** - Complete type definitions included
+- 🧪 **Comprehensive Testing** - Jest test suite with coverage
+- 📚 **Well Documented** - Extensive examples and API reference
 
 ## 🚀 Installation
 
@@ -648,11 +668,33 @@ npm run clean
 
 ## 🤝 Contributing
 
+We welcome contributions! Here's how you can help:
+
+### 🐛 **Report Issues**
+- Found a bug? [Open an issue](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
+- Include steps to reproduce and expected vs actual behavior
+- Check existing issues first to avoid duplicates
+
+### 💡 **Request Features**
+- Have an idea for a new field type? [Create a feature request](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
+- Describe the use case and how it would benefit users
+
+### 🔧 **Submit Code**
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes and add tests
+4. Run the test suite (`npm test`)
+5. Ensure code quality (`npm run lint`)
+6. Commit your changes (`git commit -m 'Add some amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### 📋 **Development Guidelines**
+- Follow the existing code style (ESLint configuration included)
+- Add tests for new functionality
+- Update documentation for new features
+- Use conventional commit messages
+- Ensure all tests pass before submitting PR
 
 ## 📝 License
 
@@ -664,7 +706,14 @@ This module extends Matomo FormAnalytics functionality. Ensure compliance with y
 
 - [Matomo FormAnalytics Documentation](https://matomo.org/docs/form-analytics/)
 - [npm Package](https://www.npmjs.com/package/matomo-form-analytics-custom-field-tracker)
-- [GitHub Repository](https://github.com/yourusername/matomo-form-analytics-custom-field-tracker)
+- [GitHub Repository](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker)
+- [GitHub Releases](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/releases)
+
+## 📊 Project Status
+
+[![GitHub last commit](https://img.shields.io/github/last-commit/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/commits/main)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/commits/main)
+[![npm downloads](https://img.shields.io/npm/dm/matomo-form-analytics-custom-field-tracker.svg)](https://www.npmjs.com/package/matomo-form-analytics-custom-field-tracker)
 
 ---
 
