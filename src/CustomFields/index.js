@@ -62,3 +62,22 @@ export function getAvailableFieldTypes() {
 export function isFieldTypeSupported(fieldType) {
     return fieldType in fieldClasses;
 }
+
+/**
+ * Register a custom field type
+ * @param {string} fieldType - Field type identifier
+ * @param {BaseField} FieldClass - Field class constructor
+ */
+export function registerFieldType(fieldType, FieldClass) {
+    fieldClasses[fieldType] = FieldClass;
+    console.log(`✅ Registered custom field type: ${fieldType}`);
+}
+
+/**
+ * Unregister a field type
+ * @param {string} fieldType - Field type identifier
+ */
+export function unregisterFieldType(fieldType) {
+    delete fieldClasses[fieldType];
+    console.log(`❌ Unregistered field type: ${fieldType}`);
+}

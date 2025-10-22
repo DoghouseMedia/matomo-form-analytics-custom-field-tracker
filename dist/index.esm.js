@@ -97,11 +97,8 @@ class BaseField {
     const fieldType = this.constructor.fieldType;
     const category = this.constructor.category;
     const selector = this.constructor.selector;
-    if (!fieldType || !category) {
-      throw new Error(`${this.constructor.name} must define static fieldType and category properties`);
-    }
-    if (!selector) {
-      throw new Error(`${this.constructor.name} must define a static selector property for automatic field detection`);
+    if (!fieldType || !category || !selector) {
+      throw new Error(`${this.constructor.name} must define static fieldType, selector and category properties`);
     }
 
     // Common properties for all field types
@@ -719,6 +716,25 @@ function isFieldTypeSupported(fieldType) {
   return fieldType in fieldClasses;
 }
 
+/**
+ * Register a custom field type
+ * @param {string} fieldType - Field type identifier
+ * @param {BaseField} FieldClass - Field class constructor
+ */
+function registerFieldType(fieldType, FieldClass) {
+  fieldClasses[fieldType] = FieldClass;
+  console.log(`✅ Registered custom field type: ${fieldType}`);
+}
+
+/**
+ * Unregister a field type
+ * @param {string} fieldType - Field type identifier
+ */
+function unregisterFieldType(fieldType) {
+  delete fieldClasses[fieldType];
+  console.log(`❌ Unregistered field type: ${fieldType}`);
+}
+
 // Custom Field Integration for Matomo FormAnalytics
 var FormAnalyticsCustomFieldTracker = {
   init() {
@@ -759,5 +775,5 @@ var FormAnalyticsCustomFieldTracker = {
   }
 };
 
-export { BaseField, FieldCategories, FormAnalyticsCustomFieldTracker, ImageSelectorField, RatingField, WysiwygField, createField, FormAnalyticsCustomFieldTracker as default, fieldClasses, getAvailableFieldTypes, getFieldCategoryDescription, getSupportedFieldCategories, isFieldTypeSupported, isValidFieldCategory };
+export { BaseField, FieldCategories, FormAnalyticsCustomFieldTracker, ImageSelectorField, RatingField, WysiwygField, createField, FormAnalyticsCustomFieldTracker as default, fieldClasses, getAvailableFieldTypes, getFieldCategoryDescription, getSupportedFieldCategories, isFieldTypeSupported, isValidFieldCategory, registerFieldType, unregisterFieldType };
 //# sourceMappingURL=index.esm.js.map

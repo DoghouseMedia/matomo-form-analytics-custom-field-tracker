@@ -11,11 +11,13 @@
 export { default as FormAnalyticsCustomFieldTracker } from './FormAnalyticsCustomFieldTracker.js';
 
 // Field classes and factory
-export {
-    createField,
-    getAvailableFieldTypes,
+export { 
+    createField, 
+    getAvailableFieldTypes, 
     isFieldTypeSupported,
-    fieldClasses
+    fieldClasses,
+    registerFieldType,
+    unregisterFieldType
 } from './CustomFields/index.js';
 
 // Base field class for extending
