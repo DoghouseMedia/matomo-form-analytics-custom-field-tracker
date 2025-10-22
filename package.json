@@ -1,5 +1,5 @@
 {
-    "name": "matomo-form-analytics-custom-field-tracker",
+    "name": "@doghouse/matomo-form-analytics-custom-field-tracker",
     "version": "1.0.0",
     "description": "A modular, object-oriented system for creating custom field trackers that integrate with Matomo FormAnalytics",
     "main": "dist/index.js",
@@ -33,8 +33,10 @@
     ],
     "author": {
         "name": "Lemuel Vellez",
-        "email": "lemuel@doghouse.agency"
+        "email": "lemuel@doghouse.agency",
+        "url": "https://doghouse.agency"
     },
+    "company": "Doghouse Digital Agency (https://doghouse.agency)",
     "license": "MIT",
     "repository": {
         "type": "git",
