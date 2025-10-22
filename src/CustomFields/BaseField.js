@@ -17,6 +17,19 @@ export class BaseField {
     static FieldCategories = FieldCategories;
 
     /**
+     * Required static properties for field classes:
+     * 
+     * @static {string} fieldType - Unique identifier for the field type (e.g., 'wysiwyg', 'rating')
+     * @static {string} category - Field category from FieldCategories enum
+     * @static {string} selector - CSS selector to find elements for this field type (optional)
+     * 
+     * Example:
+     * static fieldType = 'myField';
+     * static category = BaseField.FieldCategories.TEXT;
+     * static selector = '.my-field[data-name]';
+     */
+
+    /**
      * Creates a new BaseField instance
      *
      * @param {Object} tracker - Matomo tracker instance

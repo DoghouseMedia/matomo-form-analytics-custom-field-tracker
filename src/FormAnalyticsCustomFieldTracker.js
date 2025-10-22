@@ -1,5 +1,5 @@
 // Custom Field Integration for Matomo FormAnalytics
-import { createField } from './CustomFields/index.js';
+import { createField, fieldClasses } from './CustomFields/index.js';
 
 export default {
     init() {
@@ -20,26 +20,24 @@ export default {
             };
 
             function injectCustomFields(tracker, form) {
-                const customFieldTypes = {
-                    wysiwyg: '.formulate-input-element--wysiwyg[data-name]',
-                    imageSelector: '.formulate-input-element--image_selection[data-name]',
-                    rating: '.formulate-input-element--rating-container[data-name]'
-                };
+                // Dynamically get field types and their selectors from registered field classes
+                Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
+                    // Check if the field class has a selector defined
+                    if (FieldClass.selector) {
+                        const fields = form.querySelectorAll(FieldClass.selector);
+                        fields.forEach(field => {
+                            const fieldName = field.getAttribute('data-name');
+                            const customField = createField(tracker, field, fieldName, fieldType);
 
-                Object.entries(customFieldTypes).forEach(([type, selector]) => {
-                    const fields = form.querySelectorAll(selector);
-                    fields.forEach(field => {
-                        const fieldName = field.getAttribute('data-name');
-                        const customField = createField(tracker, field, fieldName, type);
+                            if (customField) {
+                                // Add to tracker
+                                tracker.fields.push(customField);
+                                tracker.fieldNodes.push(field);
 
-                        if (customField) {
-                            // Add to tracker
-                            tracker.fields.push(customField);
-                            tracker.fieldNodes.push(field);
-
-                            console.log(`✅ Integrated custom ${type} field: ${fieldName}`);
-                        }
-                    });
+                                console.log(`✅ Integrated custom ${fieldType} field: ${fieldName}`);
+                            }
+                        });
+                    }
                 });
             }
         })();

@@ -9,8 +9,8 @@ import { BaseField } from './BaseField.js';
  */
 export class WysiwygField extends BaseField {
     static fieldType = 'wysiwyg';
-
     static category = BaseField.FieldCategories.TEXT;
+    static selector = '.formulate-input-element--wysiwyg[data-name]';
 
     /**
      * @inheritDoc

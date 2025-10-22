@@ -9,8 +9,8 @@ import { BaseField } from './BaseField.js';
  */
 export class ImageSelectorField extends BaseField {
     static fieldType = 'imageSelector';
-
     static category = BaseField.FieldCategories.CHECKABLE;
+    static selector = '.formulate-input-element--image_selection[data-name]';
 
     /**
      * @inheritDoc

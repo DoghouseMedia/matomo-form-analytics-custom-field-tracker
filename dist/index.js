@@ -75,6 +75,19 @@ class BaseField {
   static FieldCategories = FieldCategories;
 
   /**
+   * Required static properties for field classes:
+   * 
+   * @static {string} fieldType - Unique identifier for the field type (e.g., 'wysiwyg', 'rating')
+   * @static {string} category - Field category from FieldCategories enum
+   * @static {string} selector - CSS selector to find elements for this field type (optional)
+   * 
+   * Example:
+   * static fieldType = 'myField';
+   * static category = BaseField.FieldCategories.TEXT;
+   * static selector = '.my-field[data-name]';
+   */
+
+  /**
    * Creates a new BaseField instance
    *
    * @param {Object} tracker - Matomo tracker instance
@@ -404,6 +417,7 @@ class BaseField {
 class WysiwygField extends BaseField {
   static fieldType = 'wysiwyg';
   static category = BaseField.FieldCategories.TEXT;
+  static selector = '.formulate-input-element--wysiwyg[data-name]';
 
   /**
    * @inheritDoc
@@ -449,6 +463,7 @@ class WysiwygField extends BaseField {
 class RatingField extends BaseField {
   static fieldType = 'rating';
   static category = BaseField.FieldCategories.SELECTABLE;
+  static selector = '.formulate-input-element--rating-container[data-name]';
 
   /**
    * @inheritDoc
@@ -542,6 +557,7 @@ class RatingField extends BaseField {
 class ImageSelectorField extends BaseField {
   static fieldType = 'imageSelector';
   static category = BaseField.FieldCategories.CHECKABLE;
+  static selector = '.formulate-input-element--image_selection[data-name]';
 
   /**
    * @inheritDoc
@@ -721,23 +737,22 @@ var FormAnalyticsCustomFieldTracker = {
         });
       };
       function injectCustomFields(tracker, form) {
-        const customFieldTypes = {
-          wysiwyg: '.formulate-input-element--wysiwyg[data-name]',
-          imageSelector: '.formulate-input-element--image_selection[data-name]',
-          rating: '.formulate-input-element--rating-container[data-name]'
-        };
-        Object.entries(customFieldTypes).forEach(([type, selector]) => {
-          const fields = form.querySelectorAll(selector);
-          fields.forEach(field => {
-            const fieldName = field.getAttribute('data-name');
-            const customField = createField(tracker, field, fieldName, type);
-            if (customField) {
-              // Add to tracker
-              tracker.fields.push(customField);
-              tracker.fieldNodes.push(field);
-              console.log(`✅ Integrated custom ${type} field: ${fieldName}`);
-            }
-          });
+        // Dynamically get field types and their selectors from registered field classes
+        Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
+          // Check if the field class has a selector defined
+          if (FieldClass.selector) {
+            const fields = form.querySelectorAll(FieldClass.selector);
+            fields.forEach(field => {
+              const fieldName = field.getAttribute('data-name');
+              const customField = createField(tracker, field, fieldName, fieldType);
+              if (customField) {
+                // Add to tracker
+                tracker.fields.push(customField);
+                tracker.fieldNodes.push(field);
+                console.log(`✅ Integrated custom ${fieldType} field: ${fieldName}`);
+              }
+            });
+          }
         });
       }
     })();

@@ -9,8 +9,8 @@ import { BaseField } from './BaseField.js';
  */
 export class RatingField extends BaseField {
     static fieldType = 'rating';
-
     static category = BaseField.FieldCategories.SELECTABLE;
+    static selector = '.formulate-input-element--rating-container[data-name]';
 
     /**
      * @inheritDoc
