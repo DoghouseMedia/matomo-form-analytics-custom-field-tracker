@@ -3,11 +3,11 @@ import { createField, fieldClasses } from './CustomFields/index.js';
 
 export default {
     init() {
-        (function() {
+        (function () {
             'use strict';
 
             // Wait for FormAnalytics to initialize
-            window.matomoFormAnalyticsAsyncInit = function() {
+            window.matomoFormAnalyticsAsyncInit = function () {
                 const forms = document.querySelectorAll('form, [data-matomo-form]');
                 forms.forEach(form => {
                     setTimeout(() => {

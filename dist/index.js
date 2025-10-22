@@ -79,7 +79,7 @@ class BaseField {
    * 
    * @static {string} fieldType - Unique identifier for the field type (e.g., 'wysiwyg', 'rating')
    * @static {string} category - Field category from FieldCategories enum
-   * @static {string} selector - CSS selector to find elements for this field type (optional)
+   * @static {string} selector - CSS selector to find elements for this field type (required for automatic detection)
    * 
    * Example:
    * static fieldType = 'myField';
@@ -100,8 +100,12 @@ class BaseField {
     // Get fieldType and category from static properties
     const fieldType = this.constructor.fieldType;
     const category = this.constructor.category;
+    const selector = this.constructor.selector;
     if (!fieldType || !category) {
       throw new Error(`${this.constructor.name} must define static fieldType and category properties`);
+    }
+    if (!selector) {
+      throw new Error(`${this.constructor.name} must define a static selector property for automatic field detection`);
     }
 
     // Common properties for all field types
