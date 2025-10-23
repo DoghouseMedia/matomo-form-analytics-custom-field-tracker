@@ -1,4 +1,4 @@
-import { FieldCategories } from '../Enums/FieldCategories.js';
+import { FieldCategories } from './Enums/FieldCategories.js';
 
 /**
  * BaseField Class
@@ -17,35 +17,20 @@ export class BaseField {
     static FieldCategories = FieldCategories;
 
     /**
-     * Required static properties for field classes:
-     * 
-     * @static {string} fieldType - Unique identifier for the field type (e.g., 'wysiwyg', 'rating')
-     * @static {string} category - Field category from FieldCategories enum
-     * @static {string} selector - CSS selector to find elements for this field type (required for automatic detection)
-     * 
-     * Example:
-     * static fieldType = 'myField';
-     * static category = BaseField.FieldCategories.TEXT;
-     * static selector = '.my-field[data-name]';
-     */
-
-    /**
      * Creates a new BaseField instance
      *
      * @param {Object} tracker - Matomo tracker instance
      * @param {HTMLElement} element - DOM element for the field
      * @param {string} fieldName - Unique identifier for the field
-     * @param {string} fieldType - Type of field (wysiwyg, rating, etc.)
-     * @param {string} category - Matomo field category (FIELD_TEXT, FIELD_SELECTABLE, etc.)
+     * @param {boolean} debug - Whether to enable debug logging
      */
-    constructor(tracker, element, fieldName) {
+    constructor(tracker, element, fieldName, debug = false) {
         // Get fieldType and category from static properties
         const fieldType = this.constructor.fieldType;
         const category = this.constructor.category;
-        const selector = this.constructor.selector;
 
-        if (!fieldType || !category || !selector) {
-            throw new Error(`${this.constructor.name} must define static fieldType, selector and category properties`);
+        if (!fieldType || !category) {
+            throw new Error(`${this.constructor.name} must define static fieldType and category properties`);
         }
 
         // Common properties for all field types
@@ -70,6 +55,7 @@ export class BaseField {
 
         // Store references for field-specific implementations
         this.element = element;
+        this.debug = debug;
 
         // // Set up event listeners for all custom fields
         // this.setupEventListeners();
@@ -134,7 +120,7 @@ export class BaseField {
         const interactiveElement = this.getInteractiveElement();
 
         if (!interactiveElement) {
-            console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
+            if (this.debug) console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
             return;
         }
 
@@ -161,7 +147,7 @@ export class BaseField {
         // Click event (cursor movements)
         interactiveElement.addEventListener('click', () => {
             this.trackCursorMovement();
-            console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
+            if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
         });
     }
 
@@ -175,13 +161,13 @@ export class BaseField {
         const cursorKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
         if (cursorKeys.includes(event.key)) {
             this.trackCursorMovement();
-            console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
+            if (this.debug) console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
         }
 
         // Track deletions
         if (event.key === 'Backspace' || event.key === 'Delete') {
             this.trackDeletion();
-            console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
+            if (this.debug) console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
         }
     }
 
@@ -266,7 +252,7 @@ export class BaseField {
      * Tracks focus count, sets entry field, and triggers Matomo tracking
      */
     onFocus() {
-        console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
+        if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
         this.startFocus = Date.now();
         const isNewField = this.fieldName !== this.tracker.lastFocusedFieldName;
 
@@ -287,7 +273,7 @@ export class BaseField {
      * Calculates time spent and updates tracking data
      */
     onBlur() {
-        console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
+        if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
         if (!this.startFocus) return;
 
         if (this.hasChangedValueSinceFocus) {
@@ -316,7 +302,7 @@ export class BaseField {
      * Tracks changes, hesitation time, and sets entry field
      */
     onChange() {
-        console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
+        if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
         this.timeLastChange = Date.now();
         if (this.isFocusedCausedAuto) {
             this.startFocus = this.timeLastChange;

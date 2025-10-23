@@ -13,6 +13,7 @@ This package extends Matomo FormAnalytics to track custom form fields that aren'
 - **WYSIWYG editors** (ProseMirror, TinyMCE, etc.)
 - **Star rating systems**
 - **Image selection interfaces**
+- **Custom buttons and interactive elements**
 - **Any custom interactive form elements**
 
 ## ✨ Key Features
@@ -24,6 +25,8 @@ This package extends Matomo FormAnalytics to track custom form fields that aren'
 - 📝 **TypeScript Support** - Complete type definitions included
 - 🧪 **Comprehensive Testing** - Jest test suite with coverage
 - 📚 **Well Documented** - Extensive examples and API reference
+- 🐛 **Debug Support** - Built-in debug logging for development
+- 📦 **Sample Implementations** - Reference examples for common field types
 
 ## 🚀 Installation
 
@@ -33,7 +36,7 @@ npm install matomo-form-analytics-custom-field-tracker
 
 ## 📦 Usage
 
-### ES Modules
+### Basic Usage
 
 ```javascript
 import FormAnalyticsCustomFieldTracker from 'matomo-form-analytics-custom-field-tracker';
@@ -42,32 +45,14 @@ import FormAnalyticsCustomFieldTracker from 'matomo-form-analytics-custom-field-
 FormAnalyticsCustomFieldTracker.init();
 ```
 
-### CommonJS
-
-```javascript
-const FormAnalyticsCustomFieldTracker = require('matomo-form-analytics-custom-field-tracker');
-
-// Initialize the tracker
-FormAnalyticsCustomFieldTracker.init();
-```
-
-### Browser (UMD)
-
-```html
-<script src="https://unpkg.com/matomo-form-analytics-custom-field-tracker/dist/index.umd.js"></script>
-<script>
-  MatomoFormAnalyticsCustomFieldTracker.init();
-</script>
-```
-
-### Advanced Usage with Custom Fields
+### With Custom Fields
 
 ```javascript
 import { 
   FormAnalyticsCustomFieldTracker,
   BaseField,
   FieldCategories 
-} from '@doghouse/matomo-form-analytics-custom-field-tracker';
+} from 'matomo-form-analytics-custom-field-tracker';
 
 // Define your custom field
 class H2ClickField extends BaseField {
@@ -75,8 +60,8 @@ class H2ClickField extends BaseField {
   static category = FieldCategories.SELECTABLE;
   static selector = '.survey-full__intro[data-name]';
   
-  constructor(tracker, element, fieldName) {
-    super(tracker, element, fieldName);
+  constructor(tracker, element, fieldName, debug = false) {
+    super(tracker, element, fieldName, debug);
     this.h2Element = this.getInteractiveElement();
     this.clickCount = 0;
   }
@@ -105,652 +90,241 @@ class H2ClickField extends BaseField {
   }
 }
 
-// Initialize with custom fields
+// Initialize with custom fields and debug enabled
 FormAnalyticsCustomFieldTracker.init([
   { fieldType: 'h2Click', FieldClass: H2ClickField }
-]);
+], true); // Enable debug logging
 ```
 
-## 🎯 Supported Field Types
+### Debug Mode
 
-This package comes with built-in support for the following field types:
+Enable debug logging to see detailed information about field tracking:
 
-| Field Type | Description | Category | Selector |
-|------------|-------------|----------|----------|
-| `wysiwyg` | WYSIWYG editor fields | TEXT | `.formulate-input-element--wysiwyg[data-name]` |
-| `rating` | Star rating fields | SELECTABLE | `.formulate-input-element--rating-container[data-name]` |
-| `imageSelector` | Image selection fields | CHECKABLE | `.formulate-input-element--image_selection[data-name]` |
+```javascript
+// Enable debug logging
+FormAnalyticsCustomFieldTracker.init(customFields, true);
 
-## 📁 Structure
+// Disable debug logging (default)
+FormAnalyticsCustomFieldTracker.init(customFields, false);
+```
+
+Debug output includes:
+- Form detection and processing
+- Field type matching and integration
+- User interactions (focus, blur, change)
+- Error messages and warnings
+
+## 📁 Project Structure
 
 ```
-FormAnalyticsCustomFieldTracker/
-├── FormAnalyticsCustomFieldTracker.js  # Main integration file
+src/
+├── BaseField.js                    # Base class for custom fields
+├── FormAnalyticsCustomFieldTracker.js  # Main tracker with field management
 ├── Enums/
-│   └── FieldCategories.js      # Field categories ENUM
-└── CustomFields/
-    ├── BaseField.js            # Abstract base class with common functionality
-    ├── WysiwygField.js         # WYSIWYG editor field implementation
-    ├── RatingField.js          # Star rating field implementation
-    ├── ImageSelectorField.js   # Image selection field implementation
-    ├── index.js                # Centralized factory and field registry
-    └── README.md               # This documentation
+│   └── FieldCategories.js         # Field category definitions
+├── samples/                       # Example implementations
+│   ├── SampleWysiwygField.js
+│   ├── SampleButtonClickField.js
+│   ├── SampleRatingField.js
+│   ├── index.js
+│   └── README.md
+└── index.js                       # Main exports
 ```
 
-## 🎯 Architecture Overview
+## 🎯 Field Categories
 
-### **BaseField (Abstract Base Class)**
-The foundation of the modular architecture. Contains all common functionality:
-
-- **Common Properties**: `timespent`, `hesitationtime`, `numChanges`, etc.
-- **Common Methods**: `onFocus()`, `onBlur()`, `onChange()`, `getTimeSpent()`
-- **Abstract Methods**: `isBlank()`, `getFieldSize()` (must be implemented by subclasses)
-- **Helper Methods**: `trackCursorMovement()`, `trackDeletion()`
-
-### **Field Implementations**
-Each field type extends `BaseField` and implements only field-specific logic:
-
-- **WysiwygField**: Handles contenteditable div elements
-- **RatingField**: Manages star rating interactions
-- **ImageSelectorField**: Tracks image selection/deselection
-
-### **Centralized Factory Pattern**
-The `index.js` file provides a single factory function that creates any field type:
-
-```javascript
-import { createField } from './CustomFields/index.js';
-
-// Single factory function for all field types
-const field = createField(tracker, element, fieldName, 'wysiwyg');
-```
-
-## 🚀 Quick Start
-
-### 1. **Using Existing Field Types**
-
-```javascript
-import { createField } from './CustomFields/index.js';
-
-// Create a WYSIWYG field
-const wysiwygField = createField(tracker, element, 'comment-field', 'wysiwyg');
-
-// Create a rating field
-const ratingField = createField(tracker, element, 'rating-field', 'rating');
-
-// Create an image selector field
-const imageField = createField(tracker, element, 'image-field', 'imageSelector');
-```
-
-### 2. **Checking Available Types**
-
-```javascript
-import { getAvailableFieldTypes, isFieldTypeSupported } from './CustomFields/index.js';
-
-// Get all available field types
-const types = getAvailableFieldTypes(); // ['wysiwyg', 'rating', 'imageSelector']
-
-// Check if a type is supported
-if (isFieldTypeSupported('wysiwyg')) {
-    // Create wysiwyg field
-}
-```
-
-## 🛠️ Creating New Field Types
-
-### **Step 1: Create Field Class**
-
-```javascript
-// CustomFields/NewFieldType.js
-import { BaseField } from './BaseField.js';
-
-/**
- * Custom Field Implementation Example
- * @class NewFieldType
- * @extends BaseField
- */
-export class NewFieldType extends BaseField {
-    static fieldType = 'newFieldType';
-    static category = BaseField.FieldCategories.SELECTABLE;
-    
-    /**
-     * Creates a new custom field instance
-     * @param {Object} tracker - Matomo tracker instance
-     * @param {HTMLElement} element - DOM element
-     * @param {string} fieldName - Field identifier
-     */
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
-        
-        // Initialize field-specific properties
-        this.customElement = this.getInteractiveElement();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    getInteractiveElement() {
-        return this.element.querySelector('.custom-element');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    isBlank() {
-        // Implement field-specific blank detection
-        return this.getFieldSize() === 0;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    getFieldSize() {
-        // Implement field-specific size calculation
-        return this.customElement?.value?.length || 0;
-    }
-
-    /**
-     * Sets up field-specific event listeners
-     * Override BaseField's setupEventListeners for custom handling
-     */
-    setupEventListeners() {
-        if (!this.customElement) {
-            console.error('Custom element not found:', this.element);
-            return;
-        }
-
-        // Add field-specific event listeners
-        this.customElement.addEventListener('change', () => {
-            console.log(`⚡️ CUSTOM FIELD changed (${this.fieldName})`);
-            this.onFocus();
-            this.onChange();
-            setTimeout(() => this.onBlur(), 100);
-        });
-
-        // For fields that need focus/blur simulation (like rating/image selector)
-        this.customElement.addEventListener('click', () => {
-            console.log(`⚡️ CUSTOM FIELD clicked (${this.fieldName})`);
-            this.onFocus();
-            this.onChange();
-            setTimeout(() => this.onBlur(), 100);
-        });
-    }
-}
-```
-
-### **Step 2: Register Field Class**
-
-```javascript
-// CustomFields/index.js
-import { WysiwygField } from './WysiwygField.js';
-import { RatingField } from './RatingField.js';
-import { ImageSelectorField } from './ImageSelectorField.js';
-import { NewFieldType } from './NewFieldType.js';  // Import new field class
-
-/**
- * Field Classes Registry
- * Maps field types to their corresponding classes
- */
-export const fieldClasses = {
-    wysiwyg: WysiwygField,
-    rating: RatingField,
-    imageSelector: ImageSelectorField,
-    newFieldType: NewFieldType  // Add new field type
-};
-```
-
-### **Step 3: Add Selector Configuration**
-
-```javascript
-// FormAnalyticsCustomFieldTracker.js
-function injectCustomFields(tracker, form) {
-    const customFieldTypes = {
-        wysiwyg: '.formulate-input-element--wysiwyg[data-name]',
-        imageSelector: '.formulate-input-element--image_selection[data-name]',
-        rating: '.formulate-input-element--rating-container[data-name]',
-        newFieldType: '.custom-field-container[data-name]'  // Add new selector
-    };
-
-    Object.entries(customFieldTypes).forEach(([type, selector]) => {
-        const fields = form.querySelectorAll(selector);
-        fields.forEach(field => {
-            const fieldName = field.getAttribute('data-name');
-            const customField = createField(tracker, field, fieldName, type);
-
-            if (customField) {
-                // Add to tracker
-                tracker.fields.push(customField);
-                tracker.fieldNodes.push(field);
-
-                console.log(`✅ Integrated custom ${type} field: ${fieldName}`);
-            }
-        });
-    });
-}
-```
-
-## 📊 Field Categories
-
-Fields are categorized using the `FieldCategories` ENUM for type safety:
-
-```javascript
-import { FieldCategories } from '../Enums/FieldCategories.js';
-
-// Available categories
-FieldCategories.TEXT        // 'FIELD_TEXT'
-FieldCategories.SELECTABLE // 'FIELD_SELECTABLE'  
-FieldCategories.CHECKABLE  // 'FIELD_CHECKABLE'
-
-// Or access via BaseField (recommended)
-BaseField.FieldCategories.TEXT        // 'FIELD_TEXT'
-BaseField.FieldCategories.SELECTABLE // 'FIELD_SELECTABLE'  
-BaseField.FieldCategories.CHECKABLE  // 'FIELD_CHECKABLE'
-```
+Matomo FormAnalytics supports three field categories:
 
 | Category | Description | Examples |
 |----------|-------------|----------|
-| `FieldCategories.TEXT` | Text-based input fields | WYSIWYG, textarea, input[type="text"] |
-| `FieldCategories.SELECTABLE` | Selection-based fields | Rating, dropdown, input[type="number"] |
-| `FieldCategories.CHECKABLE` | Checkbox/radio fields | Image selector, checkboxes, radio buttons |
+| **TEXT** | Text-based input fields | `password`, `text`, `url`, `tel`, `email`, `search`, `textarea` |
+| **SELECTABLE** | Selection-based fields | `color`, `date`, `datetime`, `datetime-local`, `month`, `number`, `range`, `time`, `week`, `select` |
+| **CHECKABLE** | Checkbox/radio fields | `radio`, `checkbox` |
 
-## 🔧 Required Implementation
+## 🛠️ Creating Custom Field Types
 
-When extending `BaseField`, you **must** implement:
+### Step 1: Create Your Field Class
 
-### **Static Properties (Required)**
 ```javascript
-import { BaseField } from './BaseField.js';
+import { BaseField } from 'matomo-form-analytics-custom-field-tracker';
 
-export class NewFieldType extends BaseField {
-    static fieldType = 'newFieldType';                           // Field type identifier
-    static category = BaseField.FieldCategories.SELECTABLE;     // Use ENUM from BaseField
+class MyCustomField extends BaseField {
+  static fieldType = 'myCustomField';
+  static category = BaseField.FieldCategories.SELECTABLE;
+  static selector = '.my-custom-field[data-name]';
+  
+  constructor(tracker, element, fieldName, debug = false) {
+    super(tracker, element, fieldName, debug);
+    this.interactiveElement = this.getInteractiveElement();
+  }
+  
+  getInteractiveElement() {
+    return this.element.querySelector('.interactive-part');
+  }
+  
+  isBlank() {
+    return !this.interactiveElement?.value;
+  }
+  
+  getFieldSize() {
+    return this.interactiveElement?.value?.length || 0;
+  }
+  
+  setupEventListeners() {
+    if (!this.interactiveElement) {
+      if (this.debug) console.error('Interactive element not found');
+      return;
+    }
     
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName); // No need to pass fieldType/category
-        // ... rest of constructor
-    }
+    this.interactiveElement.addEventListener('change', () => {
+      this.onFocus();
+      this.onChange();
+      setTimeout(() => this.onBlur(), 100);
+    });
+  }
 }
 ```
 
-### **Abstract Methods (Must Implement)**
-
-#### **`getInteractiveElement()`**
-```javascript
-getInteractiveElement() {
-    // Return the DOM element(s) that should receive events
-    // For single element: return HTMLElement
-    // For multiple elements: return NodeList
-    return this.element.querySelector('.interactive-element');
-}
-```
-
-#### **`isBlank()`**
-```javascript
-isBlank() {
-    // Return true if field is empty/blank
-    // Return false if field has content
-    // Follow Matomo's logic for your field category
-}
-```
-
-#### **`getFieldSize()`**
-```javascript
-getFieldSize() {
-    // Return field size metric:
-    // - Character count for FIELD_TEXT fields
-    // - -1 for FIELD_CHECKABLE fields (radio/checkbox groups)
-    // - Selection count for FIELD_SELECTABLE fields
-    // Follow Matomo's tracker.min.js logic
-}
-```
-
-## 🎯 Inherited Methods (Available to All Fields)
-
-These methods are automatically available to all field implementations:
-
-### **Event Handlers**
-- `onFocus()` - Handles focus events
-- `onBlur()` - Handles blur events
-- `onChange()` - Handles change events
-
-### **Time Tracking**
-- `getTimeSpent()` - Returns time spent in field
-- `getHesitationTime()` - Returns hesitation time
-
-### **Metrics**
-- `getTrackingParams()` - Returns Matomo-compatible parameters
-- `trackCursorMovement()` - Increments cursor count
-- `trackDeletion()` - Increments deletion count
-
-### **Lifecycle**
-- `resetOnFormSubmit()` - Resets all counters
-- `addNode(node)` - Adds DOM node to field
-
-## 🐛 Debugging
-
-### **Enable Debug Logging**
-```javascript
-// All field types include console.log statements for debugging
-console.log('WYSIWYG focus:', fieldName);
-console.log('Rating star clicked:', fieldName);
-console.log('Image selection updated:', fieldName);
-```
-
-### **Check Field Creation**
-```javascript
-import { createField, isFieldTypeSupported } from './CustomFields/index.js';
-
-// Verify field type is supported
-if (!isFieldTypeSupported('myFieldType')) {
-    console.error('Field type not supported');
-    return;
-}
-
-// Create field and check for errors
-const field = createField(tracker, element, fieldName, 'myFieldType');
-if (!field) {
-    console.error('Failed to create field');
-    return;
-}
-```
-
-### **Common Issues**
-
-1. **Field not detected**: Check selector matches HTML structure
-2. **Events not firing**: Verify `setupEventListeners()` is called
-3. **Abstract method errors**: Ensure `isBlank()` and `getFieldSize()` are implemented
-4. **Element not found**: Check `getElement` function in field configuration
-
-## 📈 Performance Considerations
-
-### **Event Listener Optimization**
-- Event listeners are added only once per field
-- Automatic cleanup on form submission
-- Efficient DOM querying with cached selectors
-
-### **Memory Management**
-- Fields are stored in Maps for O(1) lookup
-- Automatic reset on form submission
-- No memory leaks from event listeners
-
-## 🔒 Type Safety
-
-### **JSDoc Documentation**
-All methods include comprehensive JSDoc documentation:
+### Step 2: Register Your Field
 
 ```javascript
-/**
- * Creates a new field instance
- * @param {Object} tracker - Matomo tracker instance
- * @param {HTMLElement} element - DOM element
- * @param {string} fieldName - Field identifier
- * @returns {BaseField} Field instance
- */
+import FormAnalyticsCustomFieldTracker from 'matomo-form-analytics-custom-field-tracker';
+import { MyCustomField } from './MyCustomField.js';
+
+// Register and initialize
+FormAnalyticsCustomFieldTracker.init([
+  { fieldType: 'myCustomField', FieldClass: MyCustomField }
+], true); // Enable debug logging
 ```
 
-### **Error Handling**
-- Graceful fallbacks for missing elements
-- Clear error messages for debugging
-- Null checks for all DOM operations
+## 📚 Sample Implementations
 
-## 🎯 Field Type Examples
+The package includes sample implementations in the `samples/` folder:
 
-### **Text Field (WYSIWYG)**
+### SampleWysiwygField
+- **Category**: TEXT
+- **Purpose**: Handles rich text editing with ProseMirror editor
+- **Selector**: `.formulate-input-element--wysiwyg[data-name]`
+
+### SampleButtonClickField
+- **Category**: SELECTABLE
+- **Purpose**: Tracks button clicks and counts them as field interactions
+- **Selector**: `.custom-button[data-name]`
+
+### SampleRatingField
+- **Category**: SELECTABLE
+- **Purpose**: Handles star rating elements with click-based selection
+- **Selector**: `.formulate-input-element--rating-container[data-name]`
+
+## 🔧 API Reference
+
+### FormAnalyticsCustomFieldTracker
+
+#### `init(customFields, debug)`
+Initializes the tracker with custom field types.
+
+**Parameters:**
+- `customFields` (Array): Array of field definitions `[{ fieldType: 'string', FieldClass: Class }]`
+- `debug` (Boolean): Enable debug logging (default: `false`)
+
+#### `getAvailableFieldTypes()`
+Returns an array of registered field types.
+
+#### `isFieldTypeSupported(fieldType)`
+Checks if a field type is supported.
+
+### BaseField
+
+#### Constructor
 ```javascript
-import { BaseField } from './BaseField.js';
-
-export class WysiwygField extends BaseField {
-    static fieldType = 'wysiwyg';
-    static category = BaseField.FieldCategories.TEXT;
-    
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
-        this.editor = this.getInteractiveElement();
-    }
-
-    getInteractiveElement() {
-        return this.element.querySelector('.ProseMirror[contenteditable="true"]');
-    }
-
-    isBlank() {
-        if (!this.editor) return true;
-        const content = this.editor.innerText || this.editor.textContent || '';
-        return content.trim().length === 0;
-    }
-
-    getFieldSize() {
-        if (!this.editor) return 0;
-        const content = this.editor.innerText || this.editor.textContent || '';
-        return content.length;
-    }
-}
+constructor(tracker, element, fieldName, debug = false)
 ```
 
-### **Selectable Field (Rating)**
+#### Required Static Properties
+- `fieldType`: Unique identifier for the field type
+- `category`: Field category from `FieldCategories` enum
+- `selector`: CSS selector to find elements
+
+#### Required Methods
+- `getInteractiveElement()`: Return the interactive element
+- `isBlank()`: Return true if field is empty
+- `getFieldSize()`: Return field size/content length
+
+#### Optional Methods
+- `setupEventListeners()`: Override for custom event handling
+
+## 🚀 Build Formats
+
+### ES Modules
 ```javascript
-import { BaseField } from './BaseField.js';
-
-export class RatingField extends BaseField {
-    static fieldType = 'rating';
-    static category = BaseField.FieldCategories.SELECTABLE;
-    
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
-        this.stars = this.getInteractiveElement();
-        this.lastRating = this.getFieldSize();
-    }
-
-    getInteractiveElement() {
-        return this.element.querySelectorAll('.star-full');
-    }
-
-    isBlank() {
-        return this.getFilledStars().length === 0;
-    }
-
-    getFieldSize() {
-        return this.getFilledStars().length;
-    }
-
-    setupEventListeners() {
-        this.stars.forEach((star, index) => {
-            star.addEventListener('click', () => {
-                this.handleStarClick(index + 1);
-            });
-        });
-    }
-
-    handleStarClick(rating) {
-        const prevRating = this.lastRating;
-        const newRating = rating === prevRating ? 0 : rating;
-        
-        this.onFocus();
-        this.lastRating = newRating;
-        this.onChange();
-        
-        if (newRating < prevRating) {
-            this.trackDeletion();
-        }
-        
-        setTimeout(() => this.onBlur(), 100);
-    }
-}
+import FormAnalyticsCustomFieldTracker from 'matomo-form-analytics-custom-field-tracker';
 ```
 
-### **Checkable Field (Image Selector)**
+### CommonJS
 ```javascript
-import { BaseField } from './BaseField.js';
-
-export class ImageSelectorField extends BaseField {
-    static fieldType = 'imageSelector';
-    static category = BaseField.FieldCategories.CHECKABLE;
-
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
-        this.imageContainers = this.getInteractiveElement();
-        this.lastSelectedValue = this.getSelectedValue();
-    }
-
-    getInteractiveElement() {
-        return this.element.querySelectorAll('.engage-image-selector--container');
-    }
-
-    isBlank() {
-        return this.getSelectedImages().length === 0;
-    }
-
-    getFieldSize() {
-        return -1; // Follow Matomo's logic for FIELD_CHECKABLE
-    }
-
-    setupEventListeners() {
-        this.imageContainers.forEach((container, index) => {
-            container.addEventListener('click', () => this.handleImageClick(index + 1));
-        });
-    }
-
-    handleImageClick(imageIndex) {
-        const prevSelectedValue = this.lastSelectedValue;
-        this.onFocus();
-
-        setTimeout(() => {
-            const newSelectedValue = this.getSelectedValue();
-            this.lastSelectedValue = newSelectedValue;
-            this.onChange();
-
-            if (prevSelectedValue && !newSelectedValue) {
-                this.trackDeletion();
-            }
-
-            setTimeout(() => this.onBlur(), 100);
-        }, 50);
-    }
-}
+const FormAnalyticsCustomFieldTracker = require('matomo-form-analytics-custom-field-tracker');
 ```
 
-## 🤝 Contributing
+### Browser (UMD)
+```html
+<script src="https://unpkg.com/matomo-form-analytics-custom-field-tracker/dist/index.umd.js"></script>
+<script>
+  MatomoFormAnalyticsCustomFieldTracker.init();
+</script>
+```
 
-### **Adding New Field Types**
-
-1. **Create field class** extending `BaseField`
-2. **Implement abstract methods**: `getInteractiveElement()`, `isBlank()`, `getFieldSize()`
-3. **Override `setupEventListeners()`** if needed for custom event handling
-4. **Register in `fieldClasses`** object in `index.js`
-5. **Add selector configuration** in `FormAnalyticsCustomFieldTracker.js`
-6. **Test thoroughly** with debug logging
-
-### **Code Standards**
-
-- Use JSDoc for all methods with `@inheritDoc` for overridden methods
-- Follow Matomo's tracker.min.js logic for field categories
-- Implement proper error handling with console.error
-- Include debug logging with `⚡️` prefix
-- Test with multiple field instances and edge cases
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Node.js >= 14.0.0
-- npm or yarn
-
-### Setup
+## 🧪 Testing
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/matomo-form-analytics-custom-field-tracker.git
-cd matomo-form-analytics-custom-field-tracker
-
-# Install dependencies
-npm install
-
-# Build the package
-npm run build
-
 # Run tests
 npm test
 
-# Run linting
-npm run lint
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
-### Building
+## 📦 Building
 
 ```bash
-# Development build with watch mode
-npm run dev
-
-# Production build
+# Build all formats
 npm run build
 
-# Clean build directory
-npm run clean
+# Build specific format
+npm run build:esm
+npm run build:cjs
+npm run build:umd
 ```
-
-## 📊 API Reference
-
-### Main Exports
-
-- `FormAnalyticsCustomFieldTracker` - Main tracker initialization
-- `createField(tracker, element, fieldName, fieldType)` - Factory function for creating fields
-- `BaseField` - Abstract base class for extending
-- `WysiwygField`, `RatingField`, `ImageSelectorField` - Built-in field implementations
-- `FieldCategories` - Field category enum
-
-### Field Categories
-
-- `FieldCategories.TEXT` - Text-based input fields
-- `FieldCategories.SELECTABLE` - Selection-based fields  
-- `FieldCategories.CHECKABLE` - Checkbox/radio fields
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
-
-### 🐛 **Report Issues**
-- Found a bug? [Open an issue](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
-- Include steps to reproduce and expected vs actual behavior
-- Check existing issues first to avoid duplicates
-
-### 💡 **Request Features**
-- Have an idea for a new field type? [Create a feature request](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
-- Describe the use case and how it would benefit users
-
-### 🔧 **Submit Code**
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes and add tests
-4. Run the test suite (`npm test`)
-5. Ensure code quality (`npm run lint`)
-6. Commit your changes (`git commit -m 'Add some amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes
+4. Add tests for new functionality
+5. Run tests: `npm test`
+6. Commit your changes: `git commit -am 'Add feature'`
+7. Push to the branch: `git push origin feature-name`
+8. Submit a pull request
 
-### 📋 **Development Guidelines**
-- Follow the existing code style (ESLint configuration included)
-- Add tests for new functionality
-- Update documentation for new features
-- Use conventional commit messages
-- Ensure all tests pass before submitting PR
-
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This module extends Matomo FormAnalytics functionality. Ensure compliance with your Matomo license and local privacy regulations.
+## 🙏 Acknowledgments
 
-## 🔗 Links
+- Built for Matomo FormAnalytics integration
+- Inspired by modern JavaScript patterns and best practices
+- Community feedback and contributions
 
-- [Matomo FormAnalytics Documentation](https://matomo.org/docs/form-analytics/)
-- [npm Package](https://www.npmjs.com/package/matomo-form-analytics-custom-field-tracker)
-- [GitHub Repository](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker)
-- [GitHub Releases](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/releases)
+## 📞 Support
 
-## 📊 Project Status
-
-[![GitHub last commit](https://img.shields.io/github/last-commit/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/commits/main)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/DoghouseMedia/matomo-form-analytics-custom-field-tracker.svg)](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/commits/main)
-[![npm downloads](https://img.shields.io/npm/dm/matomo-form-analytics-custom-field-tracker.svg)](https://www.npmjs.com/package/matomo-form-analytics-custom-field-tracker)
+- 📧 Email: support@doghousemedia.com
+- 🐛 Issues: [GitHub Issues](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/issues)
+- 📖 Documentation: [GitHub Wiki](https://github.com/DoghouseMedia/matomo-form-analytics-custom-field-tracker/wiki)
 
 ---
 
-**Built with ❤️ using modular design and object-oriented patterns**
+**Made with ❤️ by [Doghouse Media](https://doghousemedia.com)**

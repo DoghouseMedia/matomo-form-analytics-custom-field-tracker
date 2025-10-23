@@ -1,13 +1,15 @@
-import { BaseField } from './BaseField.js';
+import { BaseField } from '../BaseField.js';
 
 /**
- * WYSIWYG Field Creator
- * Handles contenteditable div elements with ProseMirror editor
+ * Sample WYSIWYG Field Implementation
+ * 
+ * This is an example of how to create a custom field for Matomo FormAnalytics.
+ * This field handles contenteditable div elements with ProseMirror editor.
  *
- * @class WysiwygField
+ * @class SampleWysiwygField
  * @extends BaseField
  */
-export class WysiwygField extends BaseField {
+export class SampleWysiwygField extends BaseField {
     static fieldType = 'wysiwyg';
     static category = BaseField.FieldCategories.TEXT;
     static selector = '.formulate-input-element--wysiwyg[data-name]';
@@ -15,8 +17,8 @@ export class WysiwygField extends BaseField {
     /**
      * @inheritDoc
      */
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
+    constructor(tracker, element, fieldName, debug = false) {
+        super(tracker, element, fieldName, debug);
         this.editor = this.getInteractiveElement();
     }
 

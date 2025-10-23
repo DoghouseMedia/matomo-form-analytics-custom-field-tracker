@@ -3,6 +3,101 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
+ * Field Classes Registry
+ * Maps field types to their corresponding classes
+ */
+const fieldClasses = {};
+let debugMode = false;
+
+/**
+ * Factory function for creating fields of any type
+ * Uses the factory pattern to create field instances based on type
+ *
+ * @param {Object} tracker - Matomo tracker instance
+ * @param {HTMLElement} element - DOM element
+ * @param {string} fieldName - Field identifier
+ * @param {string} fieldType - Type of field to create
+ * @returns {BaseField|null} Created field instance or null if type not found
+ * @throws {Error} If field creation fails
+ */
+function createField(tracker, element, fieldName, fieldType) {
+  const FieldClass = fieldClasses[fieldType];
+  if (!FieldClass) {
+    debugMode && console.error(`No field class found for type: ${fieldType}`);
+    return null;
+  }
+  try {
+    // Verify the fieldType matches the class's static property
+    if (FieldClass.fieldType !== fieldType) {
+      debugMode && console.error(`Field type mismatch: expected ${fieldType}, got ${FieldClass.fieldType}`);
+      return null;
+    }
+    const field = new FieldClass(tracker, element, fieldName, debugMode);
+    field.setupEventListeners();
+    return field;
+  } catch (error) {
+    debugMode && console.error(`Error creating ${fieldType} field:`, error);
+    return null;
+  }
+}
+function injectCustomFields(tracker, form) {
+  // Dynamically get field types and their selectors from registered field classes
+  Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
+    // Check if the field class has a selector defined
+
+    if (FieldClass.selector) {
+      const fields = form.querySelectorAll(FieldClass.selector);
+      fields.forEach(field => {
+        const fieldName = field.getAttribute('data-name');
+        const customField = createField(tracker, field, fieldName, fieldType);
+        if (customField) {
+          // Add to tracker
+          tracker.fields.push(customField);
+          tracker.fieldNodes.push(field);
+          debugMode && console.log(`✅ Integrated custom ${fieldType} field: ${fieldName}`);
+        }
+      });
+    }
+  });
+}
+var FormAnalyticsCustomFieldTracker = {
+  init(customFields = [], debug = false) {
+    // (function () {
+    //     'use strict';
+
+    debugMode = debug;
+
+    // Register custom fields if provided
+    if (customFields && customFields.length > 0) {
+      customFields.forEach(({
+        fieldType,
+        FieldClass
+      }) => {
+        if (fieldType && FieldClass) {
+          fieldClasses[fieldType] = FieldClass;
+        } else {
+          debugMode && console.warn('Custom field must have fieldType and FieldClass properties');
+        }
+      });
+    }
+
+    // Wait for FormAnalytics to initialize
+    window.matomoFormAnalyticsAsyncInit = function () {
+      const forms = document.querySelectorAll('form, [data-matomo-form]');
+      forms.forEach(form => {
+        setTimeout(() => {
+          const tracker = window.Piwik?.FormAnalytics?.element?.findFormTrackerInstance(form);
+          if (tracker) {
+            injectCustomFields(tracker, form);
+          }
+        }, 100);
+      });
+    };
+    // })();
+  }
+};
+
+/**
  * Field Categories Enum
  *
  * Defines the three field categories supported by Matomo FormAnalytics
@@ -75,34 +170,19 @@ class BaseField {
   static FieldCategories = FieldCategories;
 
   /**
-   * Required static properties for field classes:
-   * 
-   * @static {string} fieldType - Unique identifier for the field type (e.g., 'wysiwyg', 'rating')
-   * @static {string} category - Field category from FieldCategories enum
-   * @static {string} selector - CSS selector to find elements for this field type (required for automatic detection)
-   * 
-   * Example:
-   * static fieldType = 'myField';
-   * static category = BaseField.FieldCategories.TEXT;
-   * static selector = '.my-field[data-name]';
-   */
-
-  /**
    * Creates a new BaseField instance
    *
    * @param {Object} tracker - Matomo tracker instance
    * @param {HTMLElement} element - DOM element for the field
    * @param {string} fieldName - Unique identifier for the field
-   * @param {string} fieldType - Type of field (wysiwyg, rating, etc.)
-   * @param {string} category - Matomo field category (FIELD_TEXT, FIELD_SELECTABLE, etc.)
+   * @param {boolean} debug - Whether to enable debug logging
    */
-  constructor(tracker, element, fieldName) {
+  constructor(tracker, element, fieldName, debug = false) {
     // Get fieldType and category from static properties
     const fieldType = this.constructor.fieldType;
     const category = this.constructor.category;
-    const selector = this.constructor.selector;
-    if (!fieldType || !category || !selector) {
-      throw new Error(`${this.constructor.name} must define static fieldType, selector and category properties`);
+    if (!fieldType || !category) {
+      throw new Error(`${this.constructor.name} must define static fieldType and category properties`);
     }
 
     // Common properties for all field types
@@ -127,6 +207,7 @@ class BaseField {
 
     // Store references for field-specific implementations
     this.element = element;
+    this.debug = debug;
 
     // // Set up event listeners for all custom fields
     // this.setupEventListeners();
@@ -190,7 +271,7 @@ class BaseField {
     // Get the actual interactive element (overridden by subclasses)
     const interactiveElement = this.getInteractiveElement();
     if (!interactiveElement) {
-      console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
+      if (this.debug) console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
       return;
     }
 
@@ -217,7 +298,7 @@ class BaseField {
     // Click event (cursor movements)
     interactiveElement.addEventListener('click', () => {
       this.trackCursorMovement();
-      console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
+      if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
     });
   }
 
@@ -231,13 +312,13 @@ class BaseField {
     const cursorKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
     if (cursorKeys.includes(event.key)) {
       this.trackCursorMovement();
-      console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
+      if (this.debug) console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
     }
 
     // Track deletions
     if (event.key === 'Backspace' || event.key === 'Delete') {
       this.trackDeletion();
-      console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
+      if (this.debug) console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
     }
   }
 
@@ -322,7 +403,7 @@ class BaseField {
    * Tracks focus count, sets entry field, and triggers Matomo tracking
    */
   onFocus() {
-    console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
+    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
     this.startFocus = Date.now();
     const isNewField = this.fieldName !== this.tracker.lastFocusedFieldName;
     if (isNewField && !this.isFocusedCausedAuto) {
@@ -341,7 +422,7 @@ class BaseField {
    * Calculates time spent and updates tracking data
    */
   onBlur() {
-    console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
+    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
     if (!this.startFocus) return;
     if (this.hasChangedValueSinceFocus) {
       if (this.timeLastChange && this.startFocus) {
@@ -368,7 +449,7 @@ class BaseField {
    * Tracks changes, hesitation time, and sets entry field
    */
   onChange() {
-    console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
+    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
     this.timeLastChange = Date.now();
     if (this.isFocusedCausedAuto) {
       this.startFocus = this.timeLastChange;
@@ -408,359 +489,8 @@ class BaseField {
   }
 }
 
-/**
- * WYSIWYG Field Creator
- * Handles contenteditable div elements with ProseMirror editor
- *
- * @class WysiwygField
- * @extends BaseField
- */
-class WysiwygField extends BaseField {
-  static fieldType = 'wysiwyg';
-  static category = BaseField.FieldCategories.TEXT;
-  static selector = '.formulate-input-element--wysiwyg[data-name]';
-
-  /**
-   * @inheritDoc
-   */
-  constructor(tracker, element, fieldName) {
-    super(tracker, element, fieldName);
-    this.editor = this.getInteractiveElement();
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getInteractiveElement() {
-    return this.element.querySelector('.ProseMirror[contenteditable="true"]');
-  }
-
-  /**
-   * @inheritDoc
-   */
-  isBlank() {
-    if (!this.editor) return true;
-    const content = this.editor.innerText || this.editor.textContent || '';
-    return content.trim().length === 0;
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getFieldSize() {
-    if (!this.editor) return 0;
-    const content = this.editor.innerText || this.editor.textContent || '';
-    return content.length;
-  }
-}
-
-/**
- * Rating Field Creator
- * Handles star rating elements with click-based selection
- *
- * @class RatingField
- * @extends BaseField
- */
-class RatingField extends BaseField {
-  static fieldType = 'rating';
-  static category = BaseField.FieldCategories.SELECTABLE;
-  static selector = '.formulate-input-element--rating-container[data-name]';
-
-  /**
-   * @inheritDoc
-   */
-  constructor(tracker, element, fieldName) {
-    super(tracker, element, fieldName);
-    this.stars = this.getInteractiveElement();
-    this.lastRating = this.getFieldSize();
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getInteractiveElement() {
-    return this.element.querySelectorAll('.star-full');
-  }
-
-  /**
-   * @inheritDoc
-   */
-  isBlank() {
-    const filledStars = this.element.querySelectorAll('.star-full .icon-full');
-    return filledStars.length === 0;
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getFieldSize() {
-    const filledStars = this.element.querySelectorAll('.star-full .icon-full');
-    return filledStars.length;
-  }
-
-  /**
-   * Sets up custom event listeners for rating field
-   * Overrides BaseField's setupEventListeners for custom star handling
-   */
-  setupEventListeners() {
-    if (this.stars.length === 0) {
-      console.error('Rating stars not found:', this.element);
-      return;
-    }
-
-    // Set up click events on each star
-    this.stars.forEach((star, index) => {
-      star.addEventListener('click', () => {
-        this.handleStarClick(index + 1);
-      });
-    });
-  }
-
-  /**
-   * Handles star click events
-   * Tracks rating changes and deletions (rating decreases)
-   *
-   * @param {number} rating - New rating value
-   */
-  handleStarClick(rating) {
-    const prevRating = this.lastRating;
-    const newRating = rating === prevRating ? 0 : rating;
-    console.log(`⚡️ RATING changed from ${prevRating} to ${newRating} (${this.fieldName})`);
-    // Simulate focus if this is the first interaction with the form
-    this.onFocus();
-    // Update stored rating for next click
-    this.lastRating = newRating;
-
-    // Always track as change since something happened
-    this.onChange();
-
-    // Track rating changes as "deletions" if the rating decreased
-    if (newRating < prevRating) {
-      this.trackDeletion();
-      console.log(`⚡️ RATING decreased from ${prevRating} to ${newRating} (${this.fieldName})`);
-    }
-
-    // Simulate blur after a short delay to complete
-    // the focus → change → blur cycle
-    setTimeout(() => {
-      this.onBlur();
-    }, 100);
-  }
-}
-
-/**
- * Image Selector Field Creator
- * Handles image selection elements with click-based selection
- *
- * @class ImageSelectorField
- * @extends BaseField
- */
-class ImageSelectorField extends BaseField {
-  static fieldType = 'imageSelector';
-  static category = BaseField.FieldCategories.CHECKABLE;
-  static selector = '.formulate-input-element--image_selection[data-name]';
-
-  /**
-   * @inheritDoc
-   */
-  constructor(tracker, element, fieldName) {
-    super(tracker, element, fieldName);
-    this.imageContainers = this.getInteractiveElement();
-    this.lastSelectedValue = this.getSelectedValue();
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getInteractiveElement() {
-    return this.element.querySelectorAll('.engage-image-selector--container');
-  }
-
-  /**
-   * @inheritDoc
-   */
-  isBlank() {
-    // Follows Matomo's tracker logic: return false if any image is selected
-    return this.getSelectedImages().length === 0;
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getFieldSize() {
-    // Follow Matomo's tracker logic: return -1 for FIELD_CHECKABLE fields
-    return -1;
-  }
-
-  /**
-   * Gets currently selected images from DOM
-   * @returns {NodeList} NodeList of selected image elements
-   */
-  getSelectedImages() {
-    return this.element.querySelectorAll('.engage-image-selector--container.selected');
-  }
-
-  /**
-   * Gets the value of the currently selected image
-   * @returns {string|null} The selected image value or null if none selected
-   */
-  getSelectedValue() {
-    const selected = this.element.querySelector('.engage-image-selector--container.selected');
-    if (!selected) return null;
-    const radio = selected.querySelector('input[type="radio"]');
-    return radio?.value || null;
-  }
-
-  /**
-   * Sets up custom event listeners for image selector field
-   * Overrides BaseField's setupEventListeners for custom image handling
-   */
-  setupEventListeners() {
-    if (!this.imageContainers.length) {
-      console.error('Image containers not found:', this.element);
-      return;
-    }
-
-    // Set up click events on each image container
-    this.imageContainers.forEach((container, index) => {
-      container.addEventListener('click', () => this.handleImageClick(index + 1));
-    });
-  }
-
-  /**
-   * Handles image click events
-   * Tracks image selection changes and deletions (deselections)
-   *
-   * @param {number} imageIndex - Index of clicked image (1-based)
-   */
-  handleImageClick(_imageIndex) {
-    const prevSelectedValue = this.lastSelectedValue;
-    this.onFocus();
-
-    // Wait for DOM to update, then get new selected value
-    setTimeout(() => {
-      const newSelectedValue = this.getSelectedValue();
-      console.log(`⚡️ IMAGE SELECTOR changed from "${prevSelectedValue}" to "${newSelectedValue}" (${this.fieldName})`);
-
-      // Update stored selected value for next click
-      this.lastSelectedValue = newSelectedValue;
-
-      // Always track as change since something happened
-      this.onChange();
-
-      // Track deselections as "deletions" if value changed from something to null
-      if (prevSelectedValue && !newSelectedValue) {
-        this.trackDeletion();
-        console.log(`⚡️ IMAGE SELECTOR deselected (${this.fieldName})`);
-      }
-
-      // Simulate blur after a short delay to complete
-      // the focus → change → blur cycle
-      setTimeout(() => this.onBlur(), 100);
-    }, 50); // Small delay to let DOM update
-  }
-}
-
-/**
- * Field Classes Registry
- * Maps field types to their corresponding classes
- */
-const fieldClasses = {
-  wysiwyg: WysiwygField,
-  rating: RatingField,
-  imageSelector: ImageSelectorField
-};
-
-/**
- * Factory function for creating fields of any type
- * Uses the factory pattern to create field instances based on type
- *
- * @param {Object} tracker - Matomo tracker instance
- * @param {HTMLElement} element - DOM element
- * @param {string} fieldName - Field identifier
- * @param {string} fieldType - Type of field to create
- * @returns {BaseField|null} Created field instance or null if type not found
- * @throws {Error} If field creation fails
- */
-function createField(tracker, element, fieldName, fieldType) {
-  const FieldClass = fieldClasses[fieldType];
-  if (!FieldClass) {
-    console.error(`No field class found for type: ${fieldType}`);
-    return null;
-  }
-  try {
-    // Verify the fieldType matches the class's static property
-    if (FieldClass.fieldType !== fieldType) {
-      console.error(`Field type mismatch: expected ${fieldType}, got ${FieldClass.fieldType}`);
-      return null;
-    }
-    const field = new FieldClass(tracker, element, fieldName);
-    field.setupEventListeners();
-    return field;
-  } catch (error) {
-    console.error(`Error creating ${fieldType} field:`, error);
-    return null;
-  }
-}
-
-// Custom Field Integration for Matomo FormAnalytics
-var FormAnalyticsCustomFieldTracker = {
-  init(customFields = []) {
-    (function () {
-
-      // Register custom fields if provided
-      if (customFields && customFields.length > 0) {
-        customFields.forEach(({
-          fieldType,
-          FieldClass
-        }) => {
-          if (fieldType && FieldClass) {
-            fieldClasses[fieldType] = FieldClass;
-            console.log(`✅ Registered custom field type: ${fieldType}`);
-          } else {
-            console.warn('Custom field must have fieldType and FieldClass properties');
-          }
-        });
-      }
-
-      // Wait for FormAnalytics to initialize
-      window.matomoFormAnalyticsAsyncInit = function () {
-        const forms = document.querySelectorAll('form, [data-matomo-form]');
-        forms.forEach(form => {
-          setTimeout(() => {
-            const tracker = window.Piwik?.FormAnalytics?.element?.findFormTrackerInstance(form);
-            if (tracker) {
-              injectCustomFields(tracker, form);
-            }
-          }, 100);
-        });
-      };
-      function injectCustomFields(tracker, form) {
-        // Dynamically get field types and their selectors from registered field classes
-        Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
-          // Check if the field class has a selector defined
-          if (FieldClass.selector) {
-            const fields = form.querySelectorAll(FieldClass.selector);
-            fields.forEach(field => {
-              const fieldName = field.getAttribute('data-name');
-              const customField = createField(tracker, field, fieldName, fieldType);
-              if (customField) {
-                // Add to tracker
-                tracker.fields.push(customField);
-                tracker.fieldNodes.push(field);
-                console.log(`✅ Integrated custom ${fieldType} field: ${fieldName}`);
-              }
-            });
-          }
-        });
-      }
-    })();
-  }
-};
-
 exports.BaseField = BaseField;
 exports.FieldCategories = FieldCategories;
-exports.FormAnalyticsCustomFieldTracker = FormAnalyticsCustomFieldTracker;
 exports.default = FormAnalyticsCustomFieldTracker;
 exports.getFieldCategoryDescription = getFieldCategoryDescription;
 exports.getSupportedFieldCategories = getSupportedFieldCategories;

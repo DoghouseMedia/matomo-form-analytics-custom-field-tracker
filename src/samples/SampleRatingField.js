@@ -1,13 +1,15 @@
-import { BaseField } from './BaseField.js';
+import { BaseField } from '../BaseField.js';
 
 /**
- * Rating Field Creator
- * Handles star rating elements with click-based selection
+ * Sample Rating Field Implementation
+ * 
+ * This is an example of how to create a custom field for Matomo FormAnalytics.
+ * This field handles star rating elements with click-based selection.
  *
- * @class RatingField
+ * @class SampleRatingField
  * @extends BaseField
  */
-export class RatingField extends BaseField {
+export class SampleRatingField extends BaseField {
     static fieldType = 'rating';
     static category = BaseField.FieldCategories.SELECTABLE;
     static selector = '.formulate-input-element--rating-container[data-name]';
@@ -15,8 +17,8 @@ export class RatingField extends BaseField {
     /**
      * @inheritDoc
      */
-    constructor(tracker, element, fieldName) {
-        super(tracker, element, fieldName);
+    constructor(tracker, element, fieldName, debug = false) {
+        super(tracker, element, fieldName, debug);
         this.stars = this.getInteractiveElement();
         this.lastRating = this.getFieldSize();
     }
@@ -50,7 +52,7 @@ export class RatingField extends BaseField {
      */
     setupEventListeners() {
         if (this.stars.length === 0) {
-            console.error('Rating stars not found:', this.element);
+            if (this.debug) console.error('Rating stars not found:', this.element);
             return;
         }
 
@@ -72,7 +74,7 @@ export class RatingField extends BaseField {
         const prevRating = this.lastRating;
         const newRating = rating === prevRating ? 0 : rating;
 
-        console.log(`⚡️ RATING changed from ${prevRating} to ${newRating} (${this.fieldName})`);
+        if (this.debug) console.log(`⚡️ RATING changed from ${prevRating} to ${newRating} (${this.fieldName})`);
         // Simulate focus if this is the first interaction with the form
         this.onFocus();
         // Update stored rating for next click
@@ -84,7 +86,7 @@ export class RatingField extends BaseField {
         // Track rating changes as "deletions" if the rating decreased
         if (newRating < prevRating) {
             this.trackDeletion();
-            console.log(`⚡️ RATING decreased from ${prevRating} to ${newRating} (${this.fieldName})`);
+            if (this.debug) console.log(`⚡️ RATING decreased from ${prevRating} to ${newRating} (${this.fieldName})`);
         }
 
         // Simulate blur after a short delay to complete
