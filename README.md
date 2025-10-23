@@ -60,19 +60,55 @@ FormAnalyticsCustomFieldTracker.init();
 </script>
 ```
 
-### Advanced Usage
+### Advanced Usage with Custom Fields
 
 ```javascript
 import { 
-  createField, 
-  WysiwygField, 
-  RatingField, 
-  ImageSelectorField,
+  FormAnalyticsCustomFieldTracker,
+  BaseField,
   FieldCategories 
-} from 'matomo-form-analytics-custom-field-tracker';
+} from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
-// Create custom fields programmatically
-const customField = createField(tracker, element, 'my-field', 'wysiwyg');
+// Define your custom field
+class H2ClickField extends BaseField {
+  static fieldType = 'h2Click';
+  static category = FieldCategories.SELECTABLE;
+  static selector = '.survey-full__intro[data-name]';
+  
+  constructor(tracker, element, fieldName) {
+    super(tracker, element, fieldName);
+    this.h2Element = this.getInteractiveElement();
+    this.clickCount = 0;
+  }
+  
+  getInteractiveElement() {
+    return this.element.querySelector('h2');
+  }
+  
+  isBlank() {
+    return this.clickCount === 0;
+  }
+  
+  getFieldSize() {
+    return this.clickCount;
+  }
+  
+  setupEventListeners() {
+    if (!this.h2Element) return;
+    
+    this.h2Element.addEventListener('click', () => {
+      this.onFocus();
+      this.clickCount++;
+      this.onChange();
+      setTimeout(() => this.onBlur(), 100);
+    });
+  }
+}
+
+// Initialize with custom fields
+FormAnalyticsCustomFieldTracker.init([
+  { fieldType: 'h2Click', FieldClass: H2ClickField }
+]);
 ```
 
 ## 🎯 Supported Field Types

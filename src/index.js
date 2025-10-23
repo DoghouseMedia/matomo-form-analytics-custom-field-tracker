@@ -10,25 +10,10 @@
 // Main tracker integration
 export { default as FormAnalyticsCustomFieldTracker } from './FormAnalyticsCustomFieldTracker.js';
 
-// Field classes and factory
-export {
-    createField,
-    getAvailableFieldTypes,
-    isFieldTypeSupported,
-    fieldClasses,
-    registerFieldType,
-    unregisterFieldType
-} from './CustomFields/index.js';
-
-// Base field class for extending
+// Base field class for extending (for developers who want to create custom fields)
 export { BaseField } from './CustomFields/BaseField.js';
 
-// Specific field implementations
-export { WysiwygField } from './CustomFields/WysiwygField.js';
-export { RatingField } from './CustomFields/RatingField.js';
-export { ImageSelectorField } from './CustomFields/ImageSelectorField.js';
-
-// Field categories enum
+// Field categories enum (for developers who want to create custom fields)
 export {
     FieldCategories,
     isValidFieldCategory,

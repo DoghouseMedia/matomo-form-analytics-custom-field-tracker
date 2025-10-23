@@ -2,9 +2,21 @@
 import { createField, fieldClasses } from './CustomFields/index.js';
 
 export default {
-    init() {
+    init(customFields = []) {
         (function () {
             'use strict';
+
+            // Register custom fields if provided
+            if (customFields && customFields.length > 0) {
+                customFields.forEach(({ fieldType, FieldClass }) => {
+                    if (fieldType && FieldClass) {
+                        fieldClasses[fieldType] = FieldClass;
+                        console.log(`✅ Registered custom field type: ${fieldType}`);
+                    } else {
+                        console.warn('Custom field must have fieldType and FieldClass properties');
+                    }
+                });
+            }
 
             // Wait for FormAnalytics to initialize
             window.matomoFormAnalyticsAsyncInit = function () {

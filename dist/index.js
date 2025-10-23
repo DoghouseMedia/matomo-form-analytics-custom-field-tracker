@@ -703,46 +703,25 @@ function createField(tracker, element, fieldName, fieldType) {
   }
 }
 
-/**
- * Get available field types
- * @returns {string[]} Array of supported field types
- */
-function getAvailableFieldTypes() {
-  return Object.keys(fieldClasses);
-}
-
-/**
- * Check if a field type is supported
- * @param {string} fieldType - Field type to check
- * @returns {boolean} True if supported, false otherwise
- */
-function isFieldTypeSupported(fieldType) {
-  return fieldType in fieldClasses;
-}
-
-/**
- * Register a custom field type
- * @param {string} fieldType - Field type identifier
- * @param {BaseField} FieldClass - Field class constructor
- */
-function registerFieldType(fieldType, FieldClass) {
-  fieldClasses[fieldType] = FieldClass;
-  console.log(`✅ Registered custom field type: ${fieldType}`);
-}
-
-/**
- * Unregister a field type
- * @param {string} fieldType - Field type identifier
- */
-function unregisterFieldType(fieldType) {
-  delete fieldClasses[fieldType];
-  console.log(`❌ Unregistered field type: ${fieldType}`);
-}
-
 // Custom Field Integration for Matomo FormAnalytics
 var FormAnalyticsCustomFieldTracker = {
-  init() {
+  init(customFields = []) {
     (function () {
+
+      // Register custom fields if provided
+      if (customFields && customFields.length > 0) {
+        customFields.forEach(({
+          fieldType,
+          FieldClass
+        }) => {
+          if (fieldType && FieldClass) {
+            fieldClasses[fieldType] = FieldClass;
+            console.log(`✅ Registered custom field type: ${fieldType}`);
+          } else {
+            console.warn('Custom field must have fieldType and FieldClass properties');
+          }
+        });
+      }
 
       // Wait for FormAnalytics to initialize
       window.matomoFormAnalyticsAsyncInit = function () {
@@ -782,17 +761,8 @@ var FormAnalyticsCustomFieldTracker = {
 exports.BaseField = BaseField;
 exports.FieldCategories = FieldCategories;
 exports.FormAnalyticsCustomFieldTracker = FormAnalyticsCustomFieldTracker;
-exports.ImageSelectorField = ImageSelectorField;
-exports.RatingField = RatingField;
-exports.WysiwygField = WysiwygField;
-exports.createField = createField;
 exports.default = FormAnalyticsCustomFieldTracker;
-exports.fieldClasses = fieldClasses;
-exports.getAvailableFieldTypes = getAvailableFieldTypes;
 exports.getFieldCategoryDescription = getFieldCategoryDescription;
 exports.getSupportedFieldCategories = getSupportedFieldCategories;
-exports.isFieldTypeSupported = isFieldTypeSupported;
 exports.isValidFieldCategory = isValidFieldCategory;
-exports.registerFieldType = registerFieldType;
-exports.unregisterFieldType = unregisterFieldType;
 //# sourceMappingURL=index.js.map
