@@ -11,6 +11,20 @@ A basic example showing how to:
 - Initialize the tracker with custom fields
 - Enable debug logging
 
+### Sample Field Implementations (`sample-fields/`)
+Reference implementations of common field types that you can copy and modify:
+
+- **`SampleWysiwygField.js`** - WYSIWYG editor tracking
+- **`SampleRatingField.js`** - Star rating system tracking  
+- **`SampleButtonClickField.js`** - Button click tracking
+- **`SampleImageSelectorField.js`** - Image selection tracking
+
+These samples show best practices for:
+- Field class structure
+- Event handling patterns
+- Debug logging usage
+- Matomo integration
+
 ## Running Examples
 
 To run any example:
@@ -47,7 +61,7 @@ import {
   FormAnalyticsCustomFieldTracker,
   BaseField,
   FieldCategories 
-} from 'matomo-form-analytics-custom-field-tracker';
+} from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 // Define your custom field
 class MyCustomField extends BaseField {

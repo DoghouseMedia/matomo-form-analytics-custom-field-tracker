@@ -1,8 +1,8 @@
-# Sample Custom Field Implementations
+# Sample Field Implementations
 
-This folder contains example implementations of custom fields for Matomo FormAnalytics. These are provided as reference implementations to help developers understand how to create their own custom field types.
+This folder contains reference implementations of common field types for Matomo FormAnalytics. These are provided as examples to help developers understand how to create their own custom field types.
 
-## Available Samples
+## Available Sample Fields
 
 ### SampleWysiwygField
 - **Category**: TEXT
@@ -35,8 +35,8 @@ This folder contains example implementations of custom fields for Matomo FormAna
 ## Example Usage
 
 ```javascript
-import { FormAnalyticsCustomFieldTracker } from '@your-package/matomo-form-analytics-custom-field-tracker';
-import { SampleWysiwygField } from './samples/SampleWysiwygField.js';
+import { FormAnalyticsCustomFieldTracker } from '@doghouse/matomo-form-analytics-custom-field-tracker';
+import { SampleWysiwygField } from './sample-fields/SampleWysiwygField.js';
 
 // Initialize with your custom field
 FormAnalyticsCustomFieldTracker.init([
@@ -66,7 +66,7 @@ FormAnalyticsCustomFieldTracker.init([
 ### Example Custom Field Implementation
 
 ```javascript
-import { BaseField } from '../BaseField.js';
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 class MyCustomField extends BaseField {
     static fieldType = 'myCustomField';
