@@ -83,6 +83,28 @@ export class H2ClickField extends BaseField {
 }
 ```
 
+#### Required Static Properties
+
+Every custom field **must** define these three static properties:
+
+- **`static fieldType`** - Unique identifier for your field type (e.g., `'h2Click'`, `'rating'`, `'wysiwyg'`)
+- **`static category`** - Field category from `BaseField.FieldCategories` enum (`TEXT`, `SELECTABLE`, or `CHECKABLE`)
+- **`static selector`** - CSS selector to find elements on the page (e.g., `'.survey-full__intro[data-name]'`)
+
+```javascript
+export class H2ClickField extends BaseField {
+  static fieldType = 'h2Click';                    // Unique identifier
+  static category = BaseField.FieldCategories.SELECTABLE;  // Field category
+  static selector = '.survey-full__intro[data-name]';       // CSS selector
+  // ... rest of implementation
+}
+```
+
+**Explanation of each property:**
+- **`fieldType`**: Used internally to identify and register your field type. Must be unique across all your custom fields.
+- **`category`**: Tells Matomo how to categorize this field for analytics. Choose from `TEXT` (text input), `SELECTABLE` (dropdowns, ratings), or `CHECKABLE` (checkboxes, image selectors).
+- **`selector`**: CSS selector that finds the DOM elements this field should track. Should target elements with `data-name` attributes for proper field identification.
+
 #### Required Overrides
 
 Every custom field **must** implement these three abstract methods:
