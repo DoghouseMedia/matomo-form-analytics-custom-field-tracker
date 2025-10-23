@@ -43,7 +43,8 @@ matomo-form-analytics-custom-field-tracker/
 │   ├── index.js                  # Main entry point
 │   ├── index.d.ts               # TypeScript definitions
 │   ├── FormAnalyticsCustomFieldTracker.js
-│   ├── CustomFields/            # Field implementations
+│   ├── BaseField.js             # Base class for custom fields
+│   ├── samples/                  # Example implementations
 │   └── Enums/                   # Field categories
 ├── dist/                        # Built packages
 │   ├── index.js                 # CommonJS build
