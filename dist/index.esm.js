@@ -28,7 +28,7 @@ function createField(tracker, element, fieldName, fieldType) {
       debugMode && console.error(`Field type mismatch: expected ${fieldType}, got ${FieldClass.fieldType}`);
       return null;
     }
-    const field = new FieldClass(tracker, element, fieldName, debugMode);
+    const field = new FieldClass(tracker, element, fieldName);
     field.setupEventListeners();
     return field;
   } catch (error) {
@@ -40,7 +40,6 @@ function injectCustomFields(tracker, form) {
   // Dynamically get field types and their selectors from registered field classes
   Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
     // Check if the field class has a selector defined
-
     if (FieldClass.selector) {
       const fields = form.querySelectorAll(FieldClass.selector);
       fields.forEach(field => {
@@ -58,9 +57,6 @@ function injectCustomFields(tracker, form) {
 }
 var FormAnalyticsCustomFieldTracker = {
   init(customFields = [], debug = false) {
-    // (function () {
-    //     'use strict';
-
     debugMode = debug;
 
     // Register custom fields if provided
@@ -89,9 +85,15 @@ var FormAnalyticsCustomFieldTracker = {
         }, 100);
       });
     };
-    // })();
   }
 };
+
+/**
+ * Provides global access to the current debug mode state.
+ * This allows other modules (e.g., BaseField) to check whether debug logging is enabled,
+ * without needing to pass the debug flag through constructors or method parameters.
+ */
+const getDebugMode = () => debugMode;
 
 /**
  * Field Categories Enum
@@ -171,14 +173,14 @@ class BaseField {
    * @param {Object} tracker - Matomo tracker instance
    * @param {HTMLElement} element - DOM element for the field
    * @param {string} fieldName - Unique identifier for the field
-   * @param {boolean} debug - Whether to enable debug logging
    */
-  constructor(tracker, element, fieldName, debug = false) {
+  constructor(tracker, element, fieldName) {
     // Get fieldType and category from static properties
     const fieldType = this.constructor.fieldType;
     const category = this.constructor.category;
-    if (!fieldType || !category) {
-      throw new Error(`${this.constructor.name} must define static fieldType and category properties`);
+    const selector = this.constructor.selector;
+    if (!fieldType || !category || !selector) {
+      throw new Error(`${this.constructor.name} must define static fieldType, selector and category properties`);
     }
 
     // Common properties for all field types
@@ -203,10 +205,7 @@ class BaseField {
 
     // Store references for field-specific implementations
     this.element = element;
-    this.debug = debug;
-
-    // // Set up event listeners for all custom fields
-    // this.setupEventListeners();
+    this.debug = getDebugMode();
   }
 
   /**
@@ -267,7 +266,7 @@ class BaseField {
     // Get the actual interactive element (overridden by subclasses)
     const interactiveElement = this.getInteractiveElement();
     if (!interactiveElement) {
-      if (this.debug) console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
+      this.debug && console.error(`${this.fieldType.toUpperCase()} interactive element not found:`, this.element);
       return;
     }
 
@@ -294,7 +293,7 @@ class BaseField {
     // Click event (cursor movements)
     interactiveElement.addEventListener('click', () => {
       this.trackCursorMovement();
-      if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
+      this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
     });
   }
 
@@ -308,13 +307,13 @@ class BaseField {
     const cursorKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
     if (cursorKeys.includes(event.key)) {
       this.trackCursorMovement();
-      if (this.debug) console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
+      this.debug && console.log(`${this.fieldType.toUpperCase()} cursor movement:`, event.key);
     }
 
     // Track deletions
     if (event.key === 'Backspace' || event.key === 'Delete') {
       this.trackDeletion();
-      if (this.debug) console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
+      this.debug && console.log(`${this.fieldType.toUpperCase()} deletion:`, event.key);
     }
   }
 
@@ -399,7 +398,7 @@ class BaseField {
    * Tracks focus count, sets entry field, and triggers Matomo tracking
    */
   onFocus() {
-    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
+    this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} focus (${this.fieldName})`);
     this.startFocus = Date.now();
     const isNewField = this.fieldName !== this.tracker.lastFocusedFieldName;
     if (isNewField && !this.isFocusedCausedAuto) {
@@ -418,7 +417,7 @@ class BaseField {
    * Calculates time spent and updates tracking data
    */
   onBlur() {
-    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
+    this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
     if (!this.startFocus) return;
     if (this.hasChangedValueSinceFocus) {
       if (this.timeLastChange && this.startFocus) {
@@ -445,7 +444,7 @@ class BaseField {
    * Tracks changes, hesitation time, and sets entry field
    */
   onChange() {
-    if (this.debug) console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
+    this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} changed (${this.fieldName})`);
     this.timeLastChange = Date.now();
     if (this.isFocusedCausedAuto) {
       this.startFocus = this.timeLastChange;

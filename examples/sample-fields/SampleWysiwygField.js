@@ -1,4 +1,4 @@
-import { BaseField } from '../BaseField.js';
+import { BaseField } from '../../src/BaseField.js';
 
 /**
  * Sample WYSIWYG Field Implementation
@@ -17,8 +17,8 @@ export class SampleWysiwygField extends BaseField {
     /**
      * @inheritDoc
      */
-    constructor(tracker, element, fieldName, debug = false) {
-        super(tracker, element, fieldName, debug);
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
         this.editor = this.getInteractiveElement();
     }
 

@@ -30,7 +30,7 @@ function createField(tracker, element, fieldName, fieldType) {
             return null;
         }
 
-        const field = new FieldClass(tracker, element, fieldName, debugMode);
+        const field = new FieldClass(tracker, element, fieldName);
         field.setupEventListeners();
         return field;
     } catch (error) {
@@ -43,7 +43,6 @@ function injectCustomFields(tracker, form) {
     // Dynamically get field types and their selectors from registered field classes
     Object.entries(fieldClasses).forEach(([fieldType, FieldClass]) => {
         // Check if the field class has a selector defined
-
         if (FieldClass.selector) {
             const fields = form.querySelectorAll(FieldClass.selector);
             fields.forEach(field => {
@@ -64,9 +63,6 @@ function injectCustomFields(tracker, form) {
 
 export default {
     init(customFields = [], debug = false) {
-        // (function () {
-        //     'use strict';
-
         debugMode = debug;
 
         // Register custom fields if provided
@@ -92,7 +88,6 @@ export default {
                 }, 100);
             });
         };
-        // })();
     }
 };
 
@@ -108,3 +103,10 @@ export const getAvailableFieldTypes = () => Object.keys(fieldClasses);
  * @returns {boolean} True if supported, false otherwise
  */
 export const isFieldTypeSupported = (type) => type in fieldClasses;
+
+/**
+ * Provides global access to the current debug mode state.
+ * This allows other modules (e.g., BaseField) to check whether debug logging is enabled,
+ * without needing to pass the debug flag through constructors or method parameters.
+ */
+export const getDebugMode = () => debugMode;

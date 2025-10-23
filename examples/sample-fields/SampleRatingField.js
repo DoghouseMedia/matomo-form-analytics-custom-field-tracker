@@ -1,4 +1,4 @@
-import { BaseField } from '../BaseField.js';
+import { BaseField } from '../../src/BaseField.js';
 
 /**
  * Sample Rating Field Implementation
@@ -17,8 +17,8 @@ export class SampleRatingField extends BaseField {
     /**
      * @inheritDoc
      */
-    constructor(tracker, element, fieldName, debug = false) {
-        super(tracker, element, fieldName, debug);
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
         this.stars = this.getInteractiveElement();
         this.lastRating = this.getFieldSize();
     }

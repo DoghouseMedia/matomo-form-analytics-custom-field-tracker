@@ -18,8 +18,8 @@ class H2ClickField extends BaseField {
     static category = FieldCategories.SELECTABLE;
     static selector = '.survey-full__intro[data-name]';
 
-    constructor(tracker, element, fieldName, debug = false) {
-        super(tracker, element, fieldName, debug);
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
         this.h2Element = this.getInteractiveElement();
         this.clickCount = 0;
     }
@@ -54,8 +54,8 @@ class ButtonClickField extends BaseField {
     static category = FieldCategories.SELECTABLE;
     static selector = '.custom-button[data-name]';
 
-    constructor(tracker, element, fieldName, debug = false) {
-        super(tracker, element, fieldName, debug);
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
         this.clickCount = 0;
     }
 

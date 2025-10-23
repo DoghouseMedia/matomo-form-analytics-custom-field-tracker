@@ -58,8 +58,8 @@ export class H2ClickField extends BaseField {
   static category = FieldCategories.SELECTABLE;
   static selector = '.survey-full__intro[data-name]';
   
-  constructor(tracker, element, fieldName, debug = false) {
-    super(tracker, element, fieldName, debug);
+  constructor(tracker, element, fieldName) {
+    super(tracker, element, fieldName);
     this.h2Element = this.getInteractiveElement();
     this.clickCount = 0;
   }
@@ -98,38 +98,38 @@ export class RatingField extends BaseField {
   static category = FieldCategories.SELECTABLE;
   static selector = '.formulate-input-element--rating-container[data-name]';
   
-  constructor(tracker, element, fieldName, debug = false) {
-    super(tracker, element, fieldName, debug);
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
     this.stars = this.getInteractiveElement();
     this.lastRating = this.getFieldSize();
-  }
-  
-  getInteractiveElement() {
+    }
+
+    getInteractiveElement() {
     return this.element.querySelectorAll('.star-full');
-  }
-  
-  isBlank() {
+    }
+
+    isBlank() {
     const filledStars = this.element.querySelectorAll('.star-full .icon-full');
     return filledStars.length === 0;
-  }
-  
-  getFieldSize() {
+    }
+
+    getFieldSize() {
     const filledStars = this.element.querySelectorAll('.star-full .icon-full');
     return filledStars.length;
-  }
-  
-  setupEventListeners() {
+    }
+
+    setupEventListeners() {
     if (this.stars.length === 0) {
       if (this.debug) console.error('Rating stars not found:', this.element);
-      return;
-    }
+            return;
+        }
 
     this.stars.forEach((star, index) => {
       star.addEventListener('click', () => {
         this.handleStarClick(index + 1);
-      });
+        });
     });
-  }
+}
   
   handleStarClick(rating) {
     const prevRating = this.lastRating;
@@ -156,30 +156,30 @@ export class RatingField extends BaseField {
 import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class WysiwygField extends BaseField {
-  static fieldType = 'wysiwyg';
+    static fieldType = 'wysiwyg';
   static category = FieldCategories.TEXT;
   static selector = '.formulate-input-element--wysiwyg[data-name]';
+    
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
+        this.editor = this.getInteractiveElement();
+    }
 
-  constructor(tracker, element, fieldName, debug = false) {
-    super(tracker, element, fieldName, debug);
-    this.editor = this.getInteractiveElement();
-  }
+    getInteractiveElement() {
+        return this.element.querySelector('.ProseMirror[contenteditable="true"]');
+    }
 
-  getInteractiveElement() {
-    return this.element.querySelector('.ProseMirror[contenteditable="true"]');
-  }
+    isBlank() {
+        if (!this.editor) return true;
+        const content = this.editor.innerText || this.editor.textContent || '';
+        return content.trim().length === 0;
+    }
 
-  isBlank() {
-    if (!this.editor) return true;
-    const content = this.editor.innerText || this.editor.textContent || '';
-    return content.trim().length === 0;
-  }
-
-  getFieldSize() {
-    if (!this.editor) return 0;
-    const content = this.editor.innerText || this.editor.textContent || '';
-    return content.length;
-  }
+    getFieldSize() {
+        if (!this.editor) return 0;
+        const content = this.editor.innerText || this.editor.textContent || '';
+        return content.length;
+    }
 }
 ```
 
@@ -188,25 +188,25 @@ export class WysiwygField extends BaseField {
 import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class ImageSelectorField extends BaseField {
-  static fieldType = 'imageSelector';
+    static fieldType = 'imageSelector';
   static category = FieldCategories.CHECKABLE;
   static selector = '.formulate-input-element--image_selection[data-name]';
 
-  constructor(tracker, element, fieldName, debug = false) {
-    super(tracker, element, fieldName, debug);
-    this.imageContainers = this.getInteractiveElement();
-    this.lastSelectedValue = this.getSelectedValue();
-  }
+    constructor(tracker, element, fieldName) {
+        super(tracker, element, fieldName);
+        this.imageContainers = this.getInteractiveElement();
+        this.lastSelectedValue = this.getSelectedValue();
+    }
 
-  getInteractiveElement() {
-    return this.element.querySelectorAll('.engage-image-selector--container');
-  }
+    getInteractiveElement() {
+        return this.element.querySelectorAll('.engage-image-selector--container');
+    }
 
-  isBlank() {
-    return this.getSelectedImages().length === 0;
-  }
+    isBlank() {
+        return this.getSelectedImages().length === 0;
+    }
 
-  getFieldSize() {
+    getFieldSize() {
     return -1; // FIELD_CHECKABLE fields return -1
   }
 
@@ -219,38 +219,38 @@ export class ImageSelectorField extends BaseField {
     if (!selected) return null;
     const radio = selected.querySelector('input[type="radio"]');
     return radio?.value || null;
-  }
+    }
 
-  setupEventListeners() {
+    setupEventListeners() {
     if (!this.imageContainers.length) {
       if (this.debug) console.error('Image containers not found:', this.element);
       return;
     }
 
-    this.imageContainers.forEach((container, index) => {
-      container.addEventListener('click', () => this.handleImageClick(index + 1));
-    });
-  }
+        this.imageContainers.forEach((container, index) => {
+            container.addEventListener('click', () => this.handleImageClick(index + 1));
+        });
+    }
 
   handleImageClick(_imageIndex) {
-    const prevSelectedValue = this.lastSelectedValue;
-    this.onFocus();
+        const prevSelectedValue = this.lastSelectedValue;
+        this.onFocus();
 
-    setTimeout(() => {
-      const newSelectedValue = this.getSelectedValue();
+        setTimeout(() => {
+            const newSelectedValue = this.getSelectedValue();
       this.debug && console.log(`⚡️ IMAGE SELECTOR changed from "${prevSelectedValue}" to "${newSelectedValue}" (${this.fieldName})`);
 
-      this.lastSelectedValue = newSelectedValue;
-      this.onChange();
+            this.lastSelectedValue = newSelectedValue;
+            this.onChange();
 
-      if (prevSelectedValue && !newSelectedValue) {
-        this.trackDeletion();
+            if (prevSelectedValue && !newSelectedValue) {
+                this.trackDeletion();
         this.debug && console.log(`⚡️ IMAGE SELECTOR deselected (${this.fieldName})`);
-      }
+            }
 
-      setTimeout(() => this.onBlur(), 100);
-    }, 50);
-  }
+            setTimeout(() => this.onBlur(), 100);
+        }, 50);
+    }
 }
 ```
 
@@ -273,7 +273,7 @@ FormAnalyticsCustomFieldTracker.init([
 
 ### Debug Mode
 
-Enable debug logging to see detailed information about field tracking:
+Enable debug logging to see detailed information about field tracking. Debug mode is controlled globally and affects all field instances:
 
 ```javascript
 // Enable debug logging
@@ -282,6 +282,12 @@ FormAnalyticsCustomFieldTracker.init(customFields, true);
 // Disable debug logging (default)
 FormAnalyticsCustomFieldTracker.init(customFields, false);
 ```
+
+When debug mode is enabled, you'll see console messages like:
+- `🔧 FormAnalyticsCustomFieldTracker initialized with debug: true`
+- `⚡️ WYSIWYG focus (wysiwyg-field)`
+- `⚡️ RATING changed from 3 to 4 (rating-field)`
+- `⚡️ BUTTON click (button-field)`
 
 Debug output includes:
 - Form detection and processing
@@ -328,8 +334,8 @@ class MyCustomField extends BaseField {
   static category = BaseField.FieldCategories.SELECTABLE;
   static selector = '.my-custom-field[data-name]';
   
-  constructor(tracker, element, fieldName, debug = false) {
-    super(tracker, element, fieldName, debug);
+  constructor(tracker, element, fieldName) {
+    super(tracker, element, fieldName);
     this.interactiveElement = this.getInteractiveElement();
   }
   
@@ -412,7 +418,7 @@ Checks if a field type is supported.
 
 #### Constructor
 ```javascript
-constructor(tracker, element, fieldName, debug = false)
+constructor(tracker, element, fieldName)
 ```
 
 #### Required Static Properties
