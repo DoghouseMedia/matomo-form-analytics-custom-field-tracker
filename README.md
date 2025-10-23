@@ -36,26 +36,20 @@ npm install @doghouse/matomo-form-analytics-custom-field-tracker
 
 ## 📦 Usage
 
-### Basic Usage
+### Creating Custom Fields
+
+To track custom form fields, you need to create a field class that extends `BaseField`. Here's how:
+
+#### 1. Create Your Custom Field Class
+
+Create a new file for your custom field (e.g., `MyCustomField.js`):
 
 ```javascript
-import FormAnalyticsCustomFieldTracker from '@doghouse/matomo-form-analytics-custom-field-tracker';
-
-// Initialize the tracker (no custom fields)
-FormAnalyticsCustomFieldTracker.init();
-```
-
-### With Custom Fields
-
-Create your custom field classes in separate files following this convention:
-
-**SampleCustom/H2ClickField.js**
-```javascript
-import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class H2ClickField extends BaseField {
   static fieldType = 'h2Click';
-  static category = FieldCategories.SELECTABLE;
+  static category = BaseField.BaseField.FieldCategories.SELECTABLE;
   static selector = '.survey-full__intro[data-name]';
   
   constructor(tracker, element, fieldName) {
@@ -89,13 +83,67 @@ export class H2ClickField extends BaseField {
 }
 ```
 
-**SampleCustom/RatingField.js**
+#### Required Overrides
+
+Every custom field **must** implement these three abstract methods:
+
+- **`getInteractiveElement()`** - Returns the DOM element that users interact with
+- **`isBlank()`** - Determines if the field is empty/unused
+- **`getFieldSize()`** - Returns the field's content size/value
+
+#### Optional Overrides
+
+- **`setupEventListeners()`** - Override this when you need custom event handling beyond the default focus/blur/change events
+
+#### Debug Logging
+
+When implementing custom logic, use conditional debug logging:
+
 ```javascript
-import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
+setupEventListeners() {
+  if (!this.h2Element) {
+    this.debug && console.log('H2 element not found');
+    return;
+  }
+  
+  this.h2Element.addEventListener('click', () => {
+    this.debug && console.log(`H2 clicked: ${this.fieldName}`);
+    this.onFocus();
+    this.clickCount++;
+    this.onChange();
+    setTimeout(() => this.onBlur(), 100);
+  });
+}
+```
+
+**Important:** Always use `this.debug && console.log(...)` for debug output to respect the global debug setting.
+
+#### 2. Initialize the Tracker
+
+After creating your custom field classes, initialize the tracker:
+
+```javascript
+import FormAnalyticsCustomFieldTracker from '@doghouse/matomo-form-analytics-custom-field-tracker';
+import { H2ClickField } from './SampleCustom/H2ClickField.js';
+import { RatingField } from './SampleCustom/RatingField.js';
+import { WysiwygField } from './SampleCustom/WysiwygField.js';
+import { ImageSelectorField } from './SampleCustom/ImageSelectorField.js';
+
+// Initialize custom field tracking for unsupported field types
+FormAnalyticsCustomFieldTracker.init([
+    { fieldType: 'h2Click', FieldClass: H2ClickField },
+    { fieldType: 'rating', FieldClass: RatingField },
+    { fieldType: 'wysiwyg', FieldClass: WysiwygField },
+    { fieldType: 'imageSelector', FieldClass: ImageSelectorField },
+], true); // Enable debug logging
+```
+
+```javascript
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class RatingField extends BaseField {
   static fieldType = 'rating';
-  static category = FieldCategories.SELECTABLE;
+  static category = BaseField.FieldCategories.SELECTABLE;
   static selector = '.formulate-input-element--rating-container[data-name]';
   
     constructor(tracker, element, fieldName) {
@@ -120,7 +168,7 @@ export class RatingField extends BaseField {
 
     setupEventListeners() {
     if (this.stars.length === 0) {
-      if (this.debug) console.error('Rating stars not found:', this.element);
+      this.debug && console.error('Rating stars not found:', this.element);
             return;
         }
 
@@ -151,13 +199,12 @@ export class RatingField extends BaseField {
 }
 ```
 
-**SampleCustom/WysiwygField.js**
 ```javascript
-import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class WysiwygField extends BaseField {
     static fieldType = 'wysiwyg';
-  static category = FieldCategories.TEXT;
+  static category = BaseField.FieldCategories.TEXT;
   static selector = '.formulate-input-element--wysiwyg[data-name]';
     
     constructor(tracker, element, fieldName) {
@@ -183,13 +230,12 @@ export class WysiwygField extends BaseField {
 }
 ```
 
-**SampleCustom/ImageSelectorField.js**
 ```javascript
-import { BaseField, FieldCategories } from '@doghouse/matomo-form-analytics-custom-field-tracker';
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker';
 
 export class ImageSelectorField extends BaseField {
     static fieldType = 'imageSelector';
-  static category = FieldCategories.CHECKABLE;
+  static category = BaseField.FieldCategories.CHECKABLE;
   static selector = '.formulate-input-element--image_selection[data-name]';
 
     constructor(tracker, element, fieldName) {
@@ -254,7 +300,6 @@ export class ImageSelectorField extends BaseField {
 }
 ```
 
-**Main Application File**
 ```javascript
 import FormAnalyticsCustomFieldTracker from '@doghouse/matomo-form-analytics-custom-field-tracker';
 import { H2ClickField } from './SampleCustom/H2ClickField.js';
@@ -331,7 +376,7 @@ import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker'
 
 class MyCustomField extends BaseField {
   static fieldType = 'myCustomField';
-  static category = BaseField.FieldCategories.SELECTABLE;
+  static category = BaseField.BaseField.FieldCategories.SELECTABLE;
   static selector = '.my-custom-field[data-name]';
   
   constructor(tracker, element, fieldName) {
