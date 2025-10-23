@@ -105,9 +105,9 @@ export class H2ClickField extends BaseField {
 
 Every custom field **must** implement these three abstract methods:
 
-- **`getInteractiveElement()`** - Returns the DOM element that users interact with
-- **`isBlank()`** - Determines if the field is empty/unused
-- **`getFieldSize()`** - Returns the field's content size/value
+- **`getInteractiveElement()`** - Returns the DOM element that users interact with. This is the actual clickable/typeable element inside your field container. For example, in a WYSIWYG editor, this would be the contenteditable div, not the outer wrapper.
+- **`isBlank()`** - Determines if the field is empty/unused. Returns `true` if the field has no content or user input. Used by Matomo to track completion rates and identify abandoned fields.
+- **`getFieldSize()`** - Returns the field's content size/value. This could be character count for text fields, number of selected items for multi-selects, or rating value for star ratings. Used by Matomo to analyze field complexity and user engagement.
 
 #### Optional Overrides
 
