@@ -206,6 +206,46 @@ class BaseField {
     // Store references for field-specific implementations
     this.element = element;
     this.debug = getDebugMode();
+
+    // Cleanup tracking
+    this._eventListeners = new Map();
+    this._timers = new Set();
+    this._isDestroyed = false;
+  }
+
+  /**
+   * Helper method to track event listeners for cleanup
+   * @private
+   * @param {HTMLElement} element - Element to attach listener to
+   * @param {string} event - Event type
+   * @param {Function} handler - Event handler function
+   * @param {Object} options - Event listener options
+   */
+  _addTrackedEventListener(element, event, handler, options = {}) {
+    if (this._isDestroyed) return;
+    const key = `${element}_${event}`;
+    if (!this._eventListeners.has(key)) {
+      this._eventListeners.set(key, []);
+    }
+    element.addEventListener(event, handler, options);
+    this._eventListeners.get(key).push({
+      element,
+      event,
+      handler,
+      options
+    });
+  }
+
+  /**
+   * Helper method to track timers for cleanup
+   * @private
+   * @param {number} timerId - Timer ID from setTimeout/setInterval
+   * @returns {number} The timer ID
+   */
+  _trackTimer(timerId) {
+    if (this._isDestroyed) return timerId;
+    this._timers.add(timerId);
+    return timerId;
   }
 
   /**
@@ -271,27 +311,27 @@ class BaseField {
     }
 
     // Focus event
-    interactiveElement.addEventListener('focus', () => {
+    this._addTrackedEventListener(interactiveElement, 'focus', () => {
       this.onFocus();
     });
 
     // Blur event
-    interactiveElement.addEventListener('blur', () => {
+    this._addTrackedEventListener(interactiveElement, 'blur', () => {
       this.onBlur();
     });
 
     // Input event (typing)
-    interactiveElement.addEventListener('input', () => {
+    this._addTrackedEventListener(interactiveElement, 'input', () => {
       this.onChange();
     });
 
     // Keydown event (cursor movements, deletions)
-    interactiveElement.addEventListener('keydown', event => {
+    this._addTrackedEventListener(interactiveElement, 'keydown', event => {
       this.handleKeydown(event);
     });
 
     // Click event (cursor movements)
-    interactiveElement.addEventListener('click', () => {
+    this._addTrackedEventListener(interactiveElement, 'click', () => {
       this.trackCursorMovement();
       this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} click:`, this.fieldName);
     });
@@ -481,6 +521,51 @@ class BaseField {
    */
   trackDeletion() {
     this.numDeletes++;
+  }
+
+  /**
+   * Destroys the field instance and cleans up all resources
+   * Removes event listeners, clears timers, and nulls heavy references
+   * Safe to call multiple times (idempotent)
+   */
+  destroy() {
+    if (this._isDestroyed) return;
+    this._isDestroyed = true;
+
+    // Remove all tracked event listeners
+    for (const [, listeners] of this._eventListeners) {
+      for (const {
+        element,
+        event,
+        handler,
+        options
+      } of listeners) {
+        try {
+          element.removeEventListener(event, handler, options);
+        } catch (e) {
+          this.debug && console.warn(`Failed to remove event listener: ${event}`, e);
+        }
+      }
+    }
+    this._eventListeners.clear();
+
+    // Clear all tracked timers
+    for (const timerId of this._timers) {
+      try {
+        clearTimeout(timerId);
+        clearInterval(timerId);
+      } catch (e) {
+        this.debug && console.warn(`Failed to clear timer: ${timerId}`, e);
+      }
+    }
+    this._timers.clear();
+
+    // Null out heavy references to prevent memory leaks
+    this.element = null;
+    this.nodes = null;
+    this.tracker = null;
+    this.startFocus = null;
+    this.timeLastChange = null;
   }
 }
 
