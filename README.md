@@ -156,6 +156,14 @@ FormAnalyticsCustomFieldTracker.init([
 ], true); // Enable debug logging
 ```
 
+### Debug Mode
+
+Enable debug logging to see detailed information about field tracking. Debug mode is controlled globally and affects all field instances:
+
+```javascript
+// Enable debug logging
+FormAnalyticsCustomFieldTracker.init(customFields, true);
+
 // Disable debug logging (default)
 FormAnalyticsCustomFieldTracker.init(customFields, false);
 ```
