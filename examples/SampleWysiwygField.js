@@ -1,4 +1,4 @@
-import { BaseField } from '../../src/BaseField.js';
+import { BaseField } from '@doghouse/matomo-form-analytics-custom-field-tracker'
 
 /**
  * Sample WYSIWYG Field Implementation
