@@ -292,4 +292,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ by [Doghouse Media](https://doghousemedia.com)**
+**Made with ❤️ by [Doghouse Agency](https://doghouse.agency/)**
