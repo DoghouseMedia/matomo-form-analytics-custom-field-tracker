@@ -53,11 +53,11 @@ export class SampleButtonClickField extends BaseField {
             return;
         }
 
-        this.element.addEventListener('click', () => {
+        this._addTrackedEventListener(this.element, 'click', () => {
             this.onFocus();
             this.clickCount++;
             this.onChange();
-            setTimeout(() => this.onBlur(), 100);
+            this._trackTimer(setTimeout(() => this.onBlur(), 100));
         });
     }
 }

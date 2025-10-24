@@ -56,9 +56,9 @@ export class SampleRatingField extends BaseField {
             return;
         }
 
-        // Set up click events on each star
+        // Set up click events on each star using tracked listeners
         this.stars.forEach((star, index) => {
-            star.addEventListener('click', () => {
+            this._addTrackedEventListener(star, 'click', () => {
                 this.handleStarClick(index + 1);
             });
         });
@@ -90,9 +90,9 @@ export class SampleRatingField extends BaseField {
         }
 
         // Simulate blur after a short delay to complete
-        // the focus → change → blur cycle
-        setTimeout(() => {
+        // the focus → change → blur cycle using tracked timer
+        this._trackTimer(setTimeout(() => {
             this.onBlur();
-        }, 100);
+        }, 100));
     }
 }

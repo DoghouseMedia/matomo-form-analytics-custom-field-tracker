@@ -27,6 +27,7 @@ This package extends Matomo FormAnalytics to track custom form fields that aren'
 - 📚 **Well Documented** - Extensive examples and API reference
 - 🐛 **Debug Support** - Built-in debug logging for development
 - 📦 **Sample Implementations** - Reference examples for common field types
+- 🧹 **Automatic Cleanup** - Memory leak prevention with tracked event listeners and timers
 
 ## 🚀 Installation
 
@@ -73,11 +74,11 @@ export class H2ClickField extends BaseField {
   setupEventListeners() {
     if (!this.h2Element) return;
     
-    this.h2Element.addEventListener('click', () => {
+    this._addTrackedEventListener(this.h2Element, 'click', () => {
       this.onFocus();
       this.clickCount++;
       this.onChange();
-      setTimeout(() => this.onBlur(), 100);
+      this._trackTimer(setTimeout(() => this.onBlur(), 100));
     });
   }
 }
@@ -113,6 +114,36 @@ Every custom field **must** implement these three abstract methods:
 
 - **`setupEventListeners()`** - Override this when you need custom event handling beyond the default focus/blur/change events
 
+#### Memory Management & Cleanup
+
+The BaseField class includes automatic memory leak prevention through tracked event listeners and timers:
+
+- **`_addTrackedEventListener(element, event, handler, options)`** - Use this instead of `addEventListener()` to automatically track listeners for cleanup
+- **`_trackTimer(timerId)`** - Use this to wrap `setTimeout()` or `setInterval()` calls for automatic cleanup
+- **`destroy()`** - Automatically removes all tracked event listeners and clears all timers
+
+**Example with proper cleanup:**
+```javascript
+setupEventListeners() {
+  if (!this.h2Element) return;
+  
+  // Use tracked event listener (automatically cleaned up)
+  this._addTrackedEventListener(this.h2Element, 'click', () => {
+    this.onFocus();
+    this.clickCount++;
+    this.onChange();
+    // Use tracked timer (automatically cleaned up)
+    this._trackTimer(setTimeout(() => this.onBlur(), 100));
+  });
+}
+```
+
+**Benefits:**
+- ✅ Automatic cleanup prevents memory leaks
+- ✅ Idempotent (safe to call `destroy()` multiple times)
+- ✅ No orphaned event listeners or timers
+- ✅ Consistent cleanup pattern across all field types
+
 #### Debug Logging
 
 When implementing custom logic, use conditional debug logging:
@@ -124,12 +155,12 @@ setupEventListeners() {
     return;
   }
   
-  this.h2Element.addEventListener('click', () => {
+  this._addTrackedEventListener(this.h2Element, 'click', () => {
     this.debug && console.log(`H2 clicked: ${this.fieldName}`);
     this.onFocus();
     this.clickCount++;
     this.onChange();
-    setTimeout(() => this.onBlur(), 100);
+    this._trackTimer(setTimeout(() => this.onBlur(), 100));
   });
 }
 ```
@@ -188,12 +219,11 @@ src/
 ├── FormAnalyticsCustomFieldTracker.js  # Main tracker with field management
 ├── Enums/
 │   └── FieldCategories.js         # Field category definitions
-├── samples/                       # Example implementations
+├── examples/                      # Example implementations
 │   ├── SampleWysiwygField.js
 │   ├── SampleButtonClickField.js
 │   ├── SampleRatingField.js
-│   ├── index.js
-│   └── README.md
+│   └── index.js
 └── index.js                       # Main exports
 ```
 
@@ -209,22 +239,27 @@ Matomo FormAnalytics supports three field categories:
 
 ## 📚 Sample Implementations
 
-The package includes sample implementations in the `samples/` folder:
+The package includes sample implementations in the `examples/` folder that demonstrate proper usage of the cleanup functionality:
 
 ### SampleWysiwygField
 - **Category**: TEXT
 - **Purpose**: Handles rich text editing with ProseMirror editor
 - **Selector**: `.formulate-input-element--wysiwyg[data-name]`
+- **Cleanup**: Uses default BaseField event listeners (automatically tracked)
 
 ### SampleButtonClickField
 - **Category**: SELECTABLE
 - **Purpose**: Tracks button clicks and counts them as field interactions
 - **Selector**: `.custom-button[data-name]`
+- **Cleanup**: Uses `_addTrackedEventListener()` and `_trackTimer()` for proper cleanup
 
 ### SampleRatingField
 - **Category**: SELECTABLE
 - **Purpose**: Handles star rating elements with click-based selection
 - **Selector**: `.formulate-input-element--rating-container[data-name]`
+- **Cleanup**: Uses `_addTrackedEventListener()` and `_trackTimer()` for proper cleanup
+
+All sample implementations now include proper memory management and cleanup patterns that prevent memory leaks.
 
 ## 🚀 Build Formats
 
