@@ -49,7 +49,17 @@
         if (FieldClass.selector) {
           const fields = form.querySelectorAll(FieldClass.selector);
           fields.forEach(field => {
+            if (tracker.fieldNodes.includes(field)) {
+              if (debugMode) {
+                console.log(`⏭️ Skipping already tracked ${fieldType} field: ${field.getAttribute('data-name')}`);
+              }
+              return;
+            }
             const fieldName = field.getAttribute('data-name');
+            if (!fieldName) {
+              debugMode && console.warn(`⚠️ Field missing data-name attribute:`, field);
+              return;
+            }
             const customField = createField(tracker, field, fieldName, fieldType);
             if (customField) {
               // Add to tracker
@@ -60,6 +70,82 @@
           });
         }
       });
+    }
+
+    /**
+     * Re-scans both native tracker and custom fields when new fields appear
+     * Handles pagination and conditional fields
+     */
+    function reScanFormFields(tracker, form) {
+      if (!tracker || !form) return;
+
+      // Re-scan the native tracker for new standard fields
+      if (typeof tracker.scanForFields === 'function') {
+        tracker.scanForFields();
+        if (debugMode) {
+          console.log('🔄 Re-scanned native tracker for new fields');
+        }
+      }
+
+      // Re-inject custom fields
+      injectCustomFields(tracker, form);
+    }
+
+    /**
+     * Sets up MutationObserver to detect new fields appearing
+     * Handles both pagination and conditional fields
+     */
+    function setupDynamicFieldObserver(tracker, form) {
+      let reScanTimeout = null;
+      const observer = new MutationObserver(mutations => {
+        let hasNewFields = false;
+        mutations.forEach(mutation => {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+              // Element node
+              // Check if new form fields were added
+              const isFormField = node.matches && (
+              // Standard form fields
+              node.matches('input, select, textarea') ||
+              // Custom field containers
+              node.matches('[class*="formulate-input-element"]') ||
+              // Fields within added nodes
+              node.querySelector('input, select, textarea, [class*="formulate-input-element"]'));
+              if (isFormField) {
+                hasNewFields = true;
+              }
+            }
+          });
+        });
+        if (hasNewFields) {
+          // Debounce re-scanning to avoid multiple scans for rapid changes
+          if (reScanTimeout) {
+            clearTimeout(reScanTimeout);
+          }
+          reScanTimeout = setTimeout(() => {
+            if (debugMode) {
+              console.log('📄 New fields detected (pagination/conditional), re-scanning...');
+            }
+            reScanFormFields(tracker, form);
+            reScanTimeout = null;
+          }, 300); // 300ms debounce
+        }
+      });
+
+      // Observe the form for changes
+      observer.observe(form, {
+        childList: true,
+        // Watch for added/removed children
+        subtree: true,
+        // Watch all descendants
+        attributes: false
+      });
+      if (debugMode) {
+        console.log('👀 Set up dynamic field observer for pagination/conditional fields');
+      }
+
+      // Store observer reference for potential cleanup
+      form._fieldObserver = observer;
     }
     var FormAnalyticsCustomFieldTracker = {
       init(customFields = [], debug = false) {
@@ -87,6 +173,8 @@
               const tracker = window.Piwik?.FormAnalytics?.element?.findFormTrackerInstance(form);
               if (tracker) {
                 injectCustomFields(tracker, form);
+                // Set up an observer for dynamic fields (pagination/conditional)
+                setupDynamicFieldObserver(tracker, form);
               }
             }, 100);
           });
@@ -208,6 +296,7 @@
         this.hasChangedValueSinceFocus = false;
         this.tracker = tracker;
         this.category = category;
+        this.firstInteractionTime = null;
 
         // Store references for field-specific implementations
         this.element = element;
@@ -217,6 +306,7 @@
         this._eventListeners = new Map();
         this._timers = new Set();
         this._isDestroyed = false;
+        this._delayedBlurTimer = null;
       }
 
       /**
@@ -252,6 +342,49 @@
         if (this._isDestroyed) return timerId;
         this._timers.add(timerId);
         return timerId;
+      }
+
+      /**
+       * Tracks first interaction and sets focus if not already focused
+       * Useful for click-based fields (rating, image selector, etc.) that need to track
+       * time from the first interaction to blur for accurate "time spent per question" metrics
+       *
+       * @returns {boolean} True if this was the first interaction, false otherwise
+       */
+      trackFirstInteraction() {
+        if (!this.firstInteractionTime) {
+          this.firstInteractionTime = Date.now();
+          this.onFocus();
+          return true;
+        }
+        return false;
+      }
+
+      /**
+       * Schedules a delayed blur event
+       * Useful for fields that need to complete a focus → change → blur cycle
+       */
+      scheduleDelayedBlur(delay = 100) {
+        this.cancelDelayedBlur();
+        this._delayedBlurTimer = this._trackTimer(setTimeout(() => {
+          if (this.hasChangedValueSinceFocus && this.startFocus) {
+            this.timeLastChange = Date.now();
+          }
+          this._delayedBlurTimer = null;
+          this.onBlur();
+        }, delay));
+        return this._delayedBlurTimer;
+      }
+
+      /**
+       * Cancels any scheduled delayed blur
+       */
+      cancelDelayedBlur() {
+        if (this._delayedBlurTimer) {
+          clearTimeout(this._delayedBlurTimer);
+          this._timers.delete(this._delayedBlurTimer);
+          this._delayedBlurTimer = null;
+        }
       }
 
       /**
@@ -386,6 +519,8 @@
         this.canCountChange = true;
         this.hasChangedValueSinceFocus = false;
         this.isFocusedCausedAuto = false;
+        this.firstInteractionTime = null;
+        this.cancelDelayedBlur();
       }
 
       /**
@@ -465,6 +600,18 @@
       onBlur() {
         this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
         if (!this.startFocus) return;
+
+        // If firstInteractionTime is set, use it for more accurate time tracking
+        // (useful for click-based fields where onChange happens immediately)
+        if (this.firstInteractionTime && this.hasChangedValueSinceFocus) {
+          const now = Date.now();
+          const totalTime = now - this.firstInteractionTime;
+          this.timespent += totalTime;
+          this.firstInteractionTime = null;
+          this.timeLastChange = null;
+          this.startFocus = null;
+          return;
+        }
         if (this.hasChangedValueSinceFocus) {
           if (this.timeLastChange && this.startFocus) {
             this.timespent += this.timeLastChange - this.startFocus;
