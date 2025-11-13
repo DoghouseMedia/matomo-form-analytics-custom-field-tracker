@@ -1,6 +1,6 @@
 {
     "name": "@doghouse/matomo-form-analytics-custom-field-tracker",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "A modular, object-oriented system for creating custom field trackers that integrate with Matomo FormAnalytics",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",

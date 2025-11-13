@@ -117,11 +117,12 @@ Every custom field **must** implement these three abstract methods:
 
 #### Memory Management & Cleanup
 
-The BaseField class includes automatic memory leak prevention through tracked event listeners and timers:
+The BaseField class includes automatic memory leak prevention through tracked event listeners, timers, and MutationObservers:
 
 - **`_addTrackedEventListener(element, event, handler, options)`** - Use this instead of `addEventListener()` to automatically track listeners for cleanup
 - **`_trackTimer(timerId)`** - Use this to wrap `setTimeout()` or `setInterval()` calls for automatic cleanup
-- **`destroy()`** - Automatically removes all tracked event listeners and clears all timers
+- **`_trackMutationObserver(observer)`** - Use this to track `MutationObserver` instances for automatic cleanup
+- **`destroy()`** - Automatically removes all tracked event listeners, clears all timers, and disconnects all MutationObservers
 
 **Example with proper cleanup:**
 ```javascript
@@ -137,12 +138,29 @@ setupEventListeners() {
     this._trackTimer(setTimeout(() => this.onBlur(), 100));
   });
 }
+
+setupMutationObserver() {
+  const container = this.element.querySelector('.container');
+  if (!container) return;
+  
+  // Use tracked MutationObserver (automatically cleaned up)
+  const observer = this._trackMutationObserver(new MutationObserver(() => {
+    this.checkStateChanges();
+  }));
+  
+  observer.observe(container, {
+    attributes: true,
+    attributeFilter: ['class'],
+    childList: true,
+    subtree: true,
+  });
+}
 ```
 
 **Benefits:**
 - ✅ Automatic cleanup prevents memory leaks
 - ✅ Idempotent (safe to call `destroy()` multiple times)
-- ✅ No orphaned event listeners or timers
+- ✅ No orphaned event listeners, timers, or MutationObservers
 - ✅ Consistent cleanup pattern across all field types
 
 #### Debug Logging
