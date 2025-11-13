@@ -53,6 +53,7 @@ export class BaseField {
         this.hasChangedValueSinceFocus = false;
         this.tracker = tracker;
         this.category = category;
+        this.firstInteractionTime = null;
 
         // Store references for field-specific implementations
         this.element = element;
@@ -62,6 +63,7 @@ export class BaseField {
         this._eventListeners = new Map();
         this._timers = new Set();
         this._isDestroyed = false;
+        this._delayedBlurTimer = null;
     }
 
     /**
@@ -94,6 +96,53 @@ export class BaseField {
         if (this._isDestroyed) return timerId;
         this._timers.add(timerId);
         return timerId;
+    }
+
+    /**
+     * Tracks first interaction and sets focus if not already focused
+     * Useful for click-based fields (rating, image selector, etc.) that need to track
+     * time from the first interaction to blur for accurate "time spent per question" metrics
+     *
+     * @returns {boolean} True if this was the first interaction, false otherwise
+     */
+    trackFirstInteraction() {
+        if (!this.firstInteractionTime) {
+            this.firstInteractionTime = Date.now();
+            this.onFocus();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Schedules a delayed blur event
+     * Useful for fields that need to complete a focus → change → blur cycle
+     */
+    scheduleDelayedBlur(delay = 100) {
+        this.cancelDelayedBlur();
+
+        this._delayedBlurTimer = this._trackTimer(setTimeout(() => {
+            if (this.hasChangedValueSinceFocus && this.startFocus) {
+                this.timeLastChange = Date.now();
+            }
+
+            this._delayedBlurTimer = null;
+            this.onBlur();
+        }, delay));
+
+        return this._delayedBlurTimer;
+    }
+
+    /**
+     * Cancels any scheduled delayed blur
+     */
+    cancelDelayedBlur() {
+        if (this._delayedBlurTimer) {
+            clearTimeout(this._delayedBlurTimer);
+            this._timers.delete(this._delayedBlurTimer);
+            this._delayedBlurTimer = null;
+        }
     }
 
     /**
@@ -229,6 +278,8 @@ export class BaseField {
         this.canCountChange = true;
         this.hasChangedValueSinceFocus = false;
         this.isFocusedCausedAuto = false;
+        this.firstInteractionTime = null;
+        this.cancelDelayedBlur();
     }
 
     /**
@@ -310,6 +361,18 @@ export class BaseField {
     onBlur() {
         this.debug && console.log(`⚡️ ${this.fieldType.toUpperCase()} blur (${this.fieldName})`);
         if (!this.startFocus) return;
+
+        // If firstInteractionTime is set, use it for more accurate time tracking
+        // (useful for click-based fields where onChange happens immediately)
+        if (this.firstInteractionTime && this.hasChangedValueSinceFocus) {
+            const now = Date.now();
+            const totalTime = now - this.firstInteractionTime;
+            this.timespent += totalTime;
+            this.firstInteractionTime = null;
+            this.timeLastChange = null;
+            this.startFocus = null;
+            return;
+        }
 
         if (this.hasChangedValueSinceFocus) {
             if (this.timeLastChange && this.startFocus) {

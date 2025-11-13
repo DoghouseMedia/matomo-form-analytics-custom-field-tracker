@@ -28,6 +28,7 @@ This package extends Matomo FormAnalytics to track custom form fields that aren'
 - 🐛 **Debug Support** - Built-in debug logging for development
 - 📦 **Sample Implementations** - Reference examples for common field types
 - 🧹 **Automatic Cleanup** - Memory leak prevention with tracked event listeners and timers
+- 🔄 **Dynamic Field Detection** - Automatic support for conditional fields and paginated forms
 
 ## 🚀 Installation
 
@@ -210,6 +211,68 @@ Debug output includes:
 - Field type matching and integration
 - User interactions (focus, blur, change)
 - Error messages and warnings
+
+### Conditional Fields & Paginated Forms
+
+The tracker automatically supports **conditional fields** and **paginated forms** through dynamic field detection.
+
+#### Conditional Fields
+
+**Conditional fields** are hidden fields that appear dynamically based on another field's value. For example, if a user selects "Yes" to a question, additional fields may appear that weren't visible initially.
+
+The tracker uses a `MutationObserver` to automatically detect when new fields are added to the form and integrates them seamlessly:
+
+```javascript
+// Example: A conditional field appears when user selects an option
+// The tracker automatically detects and starts tracking it
+FormAnalyticsCustomFieldTracker.init([
+    { fieldType: 'rating', FieldClass: RatingField },
+    { fieldType: 'wysiwyg', FieldClass: WysiwygField },
+], true);
+
+// When a conditional field appears (e.g., after selecting "Yes"),
+// it's automatically detected and tracked without any additional code
+```
+
+**How it works:**
+- The tracker monitors the form for DOM changes
+- When new fields matching your custom field selectors are added, they're automatically detected
+- Both native Matomo fields and custom fields are re-scanned
+- Fields are only tracked once (duplicate detection prevents double-tracking)
+
+#### Paginated Forms
+
+**Paginated forms** are multi-step forms where fields are added to the DOM as users navigate through pages. The tracker handles this automatically:
+
+```javascript
+// Works seamlessly with multi-step/paginated forms
+FormAnalyticsCustomFieldTracker.init([
+    { fieldType: 'rating', FieldClass: RatingField },
+    { fieldType: 'wysiwyg', FieldClass: WysiwygField },
+], true);
+
+// As users navigate to page 2, 3, etc., new fields are automatically detected
+```
+
+**Features:**
+- ✅ Automatic detection of fields added on new pages
+- ✅ Debounced re-scanning (300ms) to handle rapid changes efficiently
+- ✅ Works with both native Matomo fields and custom fields
+- ✅ No additional configuration needed
+
+**Debug output for dynamic fields:**
+When debug mode is enabled, you'll see messages like:
+- `📄 New fields detected (pagination/conditional), re-scanning...`
+- `🔄 Re-scanned native tracker for new fields`
+- `👀 Set up dynamic field observer for pagination/conditional fields`
+- `✅ Integrated custom rating field: field-name` (for newly detected fields)
+
+**Technical details:**
+- Uses `MutationObserver` API to watch for DOM changes
+- Observes the entire form subtree for added nodes
+- Detects standard form fields (`input`, `select`, `textarea`) and custom field containers
+- Debounces re-scanning to optimize performance
+- Prevents duplicate tracking by checking if fields are already tracked
 
 ## 📁 Project Structure
 
