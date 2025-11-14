@@ -62,6 +62,8 @@ export class BaseField {
         // Cleanup tracking
         this._eventListeners = new Map();
         this._timers = new Set();
+        // Single observer reference for fields that need one.
+        this._mutationObserver = null;
         this._mutationObservers = new Set();
         this._isDestroyed = false;
         this._delayedBlurTimer = null;
@@ -109,6 +111,37 @@ export class BaseField {
         if (this._isDestroyed) return observer;
         this._mutationObservers.add(observer);
         return observer;
+    }
+
+    /**
+     * Helper method to set up a tracked MutationObserver with automatic cleanup
+     * Disconnects any existing observer before creating a new one
+     * Useful for fields that need a single MutationObserver that may be recreated
+     * 
+     * @private
+     * @param {Function} callback - MutationObserver callback function
+     * @param {Object} observeOptions - Options for observer.observe() (attributes, childList, subtree, etc.)
+     * @param {HTMLElement} [targetElement] - Element to observe (defaults to this.element)
+     * @returns {MutationObserver} The created and tracked observer instance
+     */
+    _setupTrackedMutationObserver(callback, observeOptions, targetElement = null) {
+        // Disconnect existing observer if setup is called multiple times
+        if (this._mutationObserver) {
+            this._mutationObserver.disconnect();
+            // Remove from tracked set since we're replacing it
+            this._mutationObservers.delete(this._mutationObserver);
+        }
+
+        // Create and track the MutationObserver for automatic cleanup
+        this._mutationObserver = this._trackMutationObserver(new MutationObserver(callback));
+
+        // Observe the target element (defaults to this.element)
+        const target = targetElement || this.element;
+        if (target) {
+            this._mutationObserver.observe(target, observeOptions);
+        }
+
+        return this._mutationObserver;
     }
 
     /**
@@ -500,6 +533,7 @@ export class BaseField {
         this._mutationObservers.clear();
 
         // Null out heavy references to prevent memory leaks
+        this._mutationObserver = null;
         this.element = null;
         this.nodes = null;
         this.tracker = null;

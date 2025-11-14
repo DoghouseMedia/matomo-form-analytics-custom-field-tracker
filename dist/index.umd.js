@@ -305,6 +305,7 @@
         // Cleanup tracking
         this._eventListeners = new Map();
         this._timers = new Set();
+        this._mutationObservers = new Set();
         this._isDestroyed = false;
         this._delayedBlurTimer = null;
       }
@@ -342,6 +343,18 @@
         if (this._isDestroyed) return timerId;
         this._timers.add(timerId);
         return timerId;
+      }
+
+      /**
+       * Helper method to track MutationObservers for cleanup
+       * @private
+       * @param {MutationObserver} observer - MutationObserver instance
+       * @returns {MutationObserver} The observer instance
+       */
+      _trackMutationObserver(observer) {
+        if (this._isDestroyed) return observer;
+        this._mutationObservers.add(observer);
+        return observer;
       }
 
       /**
@@ -712,6 +725,16 @@
           }
         }
         this._timers.clear();
+
+        // Disconnect all tracked MutationObservers
+        for (const observer of this._mutationObservers) {
+          try {
+            observer.disconnect();
+          } catch (e) {
+            this.debug && console.warn(`Failed to disconnect MutationObserver:`, e);
+          }
+        }
+        this._mutationObservers.clear();
 
         // Null out heavy references to prevent memory leaks
         this.element = null;

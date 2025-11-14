@@ -122,6 +122,7 @@ The BaseField class includes automatic memory leak prevention through tracked ev
 - **`_addTrackedEventListener(element, event, handler, options)`** - Use this instead of `addEventListener()` to automatically track listeners for cleanup
 - **`_trackTimer(timerId)`** - Use this to wrap `setTimeout()` or `setInterval()` calls for automatic cleanup
 - **`_trackMutationObserver(observer)`** - Use this to track `MutationObserver` instances for automatic cleanup
+- **`_setupTrackedMutationObserver(callback, observeOptions, targetElement)`** - Convenient helper to create, track, and observe with a MutationObserver (handles disconnecting existing observer if called multiple times)
 - **`destroy()`** - Automatically removes all tracked event listeners, clears all timers, and disconnects all MutationObservers
 
 **Example with proper cleanup:**
@@ -143,17 +144,23 @@ setupMutationObserver() {
   const container = this.element.querySelector('.container');
   if (!container) return;
   
-  // Use tracked MutationObserver (automatically cleaned up)
-  const observer = this._trackMutationObserver(new MutationObserver(() => {
-    this.checkStateChanges();
-  }));
+  // Option 1: Use _setupTrackedMutationObserver helper (recommended for single observer)
+  this._setupTrackedMutationObserver(
+    () => this.checkStateChanges(),
+    {
+      attributes: true,
+      attributeFilter: ['class'],
+      childList: true,
+      subtree: true,
+    },
+    container
+  );
   
-  observer.observe(container, {
-    attributes: true,
-    attributeFilter: ['class'],
-    childList: true,
-    subtree: true,
-  });
+  // Option 2: Manual setup with _trackMutationObserver (for multiple observers)
+  // const observer = this._trackMutationObserver(new MutationObserver(() => {
+  //   this.checkStateChanges();
+  // }));
+  // observer.observe(container, { attributes: true, childList: true, subtree: true });
 }
 ```
 
